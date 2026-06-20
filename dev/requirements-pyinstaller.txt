@@ -4,6 +4,7 @@ enlighten
 pywin32;platform_system == "Windows"
 pypiwin32;platform_system == "Windows"
 kivy
-opencv-python
-pyenchant
+kivy_deps.sdl2;platform_system == "Windows"
+kivy_deps.glew;platform_system == "Windows"
+kivy_deps.angle;platform_system == "Windows"
 pyinstaller

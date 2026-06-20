@@ -1,0 +1,2 @@
+VERSION = '4.6.1'
+GUI_VERSION = '4.6.1'

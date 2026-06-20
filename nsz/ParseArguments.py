@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 class ParseArguments:
 	@staticmethod
-	def parse(for_nutPrint = False):
+	def parse(for_nutPrint = False, args = None):
 		parser = ArgumentParser(add_help = not for_nutPrint)
 		parser.add_argument('file', nargs='*')
 		parser.add_argument('-C', action='store_true', help='Compress NSP/XCI')
@@ -43,7 +43,7 @@ class ParseArguments:
 		parser.add_argument('--keys', type=str, default=None, help='Path to a hactool compatible keys file (or directory containing prod.keys/keys.txt).')
 
 		if for_nutPrint:
-			args, _unknown = parser.parse_known_args()
+			parsedArgs, _unknown = parser.parse_known_args(args)
 		else:
-			args = parser.parse_args()
-		return args
+			parsedArgs = parser.parse_args(args)
+		return parsedArgs

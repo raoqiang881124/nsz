@@ -1,0 +1,19 @@
+{
+  "name": "nsz-binary-build",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/nsz",
+  "remoteEnv": {
+    "PATH": "/opt/venv-linux/bin:${containerEnv:PATH}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.python"
+      ]
+    }
+  }
+}

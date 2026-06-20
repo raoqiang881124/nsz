@@ -1,0 +1,194 @@
+name: Build Release Binaries
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  build:
+    name: Build ${{ matrix.os-name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            os-name: linux
+            artifact-name: nsz-cli-linux
+            binary-path: dist/nsz
+          - os: macos-15
+            os-name: macos
+            artifact-name: nsz-cli-macos
+            binary-path: dist/nsz
+          - os: windows-2022
+            os-name: windows
+            artifact-name: nsz-cli-windows
+            binary-path: dist/nsz.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pycryptodome zstandard enlighten
+
+      - name: Build with PyInstaller
+        run: pyinstaller --log-level WARN dev/nsz-cli.spec
+
+      - name: Rename binary (Linux / macOS)
+        if: runner.os != 'Windows'
+        run: mv dist/nsz ${{ matrix.artifact-name }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: mv dist/nsz.exe ${{ matrix.artifact-name }}.exe
+
+      - name: Upload artifact (Linux / macOS)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}.exe
+
+  build-gui:
+    name: Build GUI ${{ matrix.os-name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            os-name: linux
+            artifact-name: nsz-gui-linux
+          - os: macos-15
+            os-name: macos
+            artifact-name: nsz-gui-macos
+          - os: windows-2022
+            os-name: windows
+            artifact-name: nsz-gui-windows
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb \
+            libgl1 \
+            libegl1 \
+            libgles2 \
+            libmtdev1 \
+            libx11-6 \
+            libxext6 \
+            libxrender1 \
+            libxrandr2 \
+            libxfixes3 \
+            libxcursor1 \
+            libxi6 \
+            libxinerama1 \
+            libxxf86vm1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dev/requirements-pyinstaller.txt
+
+      - name: Build with PyInstaller (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a pyinstaller --log-level WARN dev/nsz-gui.spec
+
+      - name: Build with PyInstaller (macOS)
+        if: runner.os == 'macOS'
+        run: pyinstaller --log-level WARN dev/nsz-gui.spec
+
+      - name: Build with PyInstaller (Windows)
+        if: runner.os == 'Windows'
+        run: pyinstaller --log-level WARN dev/nsz-gui.spec
+        env:
+          # The build process imports Kivy to collect hidden imports, which
+          # probes the GL window provider. GitHub's Windows runners only
+          # expose GDI software OpenGL 1.1, below Kivy's minimum of 2.0, so
+          # force ANGLE (DirectX-backed GLES) the same way the packaged app
+          # does at runtime (see configure_windows_gui_env in nsz/__init__.py).
+          KIVY_GL_BACKEND: angle_sdl2
+          KIVY_GRAPHICS: gles
+
+      - name: Rename binary (Linux / macOS)
+        if: runner.os != 'Windows'
+        run: mv dist/nsz-gui ${{ matrix.artifact-name }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: mv dist/nsz-gui.exe ${{ matrix.artifact-name }}.exe
+
+      - name: Upload artifact (Linux / macOS)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}.exe
+
+  release:
+    name: Create GitHub Release
+    needs: [build, build-gui]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Zip GUI artifacts
+        run: |
+          for dir in artifacts/nsz-gui-*; do
+            name=$(basename "$dir")
+            (cd "$dir" && zip -j "../../$name.zip" *)
+          done
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: NSZ ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/nsz-cli-linux/nsz-cli-linux
+            artifacts/nsz-cli-macos/nsz-cli-macos
+            artifacts/nsz-cli-windows/nsz-cli-windows.exe
+            nsz-gui-linux.zip
+            nsz-gui-macos.zip
+            nsz-gui-windows.zip

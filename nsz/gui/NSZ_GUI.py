@@ -13,14 +13,78 @@ from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
 from kivy.uix.settings import SettingsWithTabbedPanel
 from kivy.logger import Logger
 from nsz.gui.SettingScrollOptions import *
+from nsz.nut import Print
+from pathlib import Path
 import logging
 import os
 
+try:
+	from nsz.version import GUI_VERSION as GUI_TITLE_VERSION
+except Exception:
+	GUI_TITLE_VERSION = 'unknown version'
+
+
+def patchKivyOpenGlExtensionDecode():
+	try:
+		from kivy.graphics import opengl_utils
+		from kivy.graphics.opengl import GL_EXTENSIONS, glGetString
+	except Exception:
+		return
+
+	if getattr(opengl_utils, '_nsz_safe_gl_extensions_patch', False):
+		return
+
+	originalGlGetExtensions = opengl_utils.gl_get_extensions
+
+	def safeGlGetExtensions(*args, **kwargs):
+		try:
+			return originalGlGetExtensions(*args, **kwargs)
+		except UnicodeDecodeError as e:
+			try:
+				rawExtensions = glGetString(GL_EXTENSIONS)
+			except Exception:
+				rawExtensions = None
+
+			if isinstance(rawExtensions, bytes):
+				parsedExtensions = rawExtensions.decode('utf-8', errors='replace').split()
+			elif rawExtensions:
+				parsedExtensions = str(rawExtensions).split()
+			else:
+				parsedExtensions = []
+
+			Logger.warning(
+				'NSZ GUI: Non-UTF8 OpenGL extension list encountered; '
+				'continuing with sanitized extension names. (%s)',
+				e
+			)
+			return parsedExtensions
+
+	opengl_utils.gl_get_extensions = safeGlGetExtensions
+	opengl_utils._nsz_safe_gl_extensions_patch = True
+
+def launchGui():
+	kivyConfigPathObj = Path.home().joinpath('.kivy').joinpath('config.ini')
+	if kivyConfigPathObj.exists():
+		kivyConfigPath = str(kivyConfigPathObj)
+		with open(kivyConfigPath, 'r', encoding='utf-8') as f:
+			lines = f.readlines()
+		brokenKivyConfig = False
+		for i, line in enumerate(lines):
+			if line.startswith('default_font') and 'MPLUS1p-Medium.ttf' in line:
+				brokenKivyConfig = True
+				lines[i] = "default_font = ['Roboto', 'data/fonts/Roboto-Regular.ttf', 'data/fonts/Roboto-Italic.ttf', 'data/fonts/Roboto-Bold.ttf', 'data/fonts/Roboto-BoldItalic.ttf']\n"
+		if brokenKivyConfig:
+			Print.info(f'[INFO   ] Fixing {kivyConfigPath}')
+			with open(kivyConfigPath, 'w', encoding='utf-8') as f:
+				f.writelines(lines)
+	return GUI().run()
+
 class GUI(App):
-	
+
 	rootWidget = None
-	
+
 	def run(self):
+		patchKivyOpenGlExtensionDecode()
 		LabelBase.register(DEFAULT_FONT, getGuiPath('fonts/MPLUS1p-Medium.ttf'))
 		super(GUI, self).run()
 		Window.close()
@@ -28,7 +92,7 @@ class GUI(App):
 			return arguments(self.config, self.rootWidget)
 		else:
 			return None
-	
+
 	def build(self):
 		realLevl = Logger.level
 		#To hide the wrongly appearance of "[WARNING] Both Window.minimum_width
@@ -40,7 +104,7 @@ class GUI(App):
 		Window.minimum_height = 600
 		Logger.setLevel(realLevl)
 		Builder.load_file(getGuiPath('layout/GUI.kv'))
-		self.title = 'NSZ GUI 4.6'
+		self.title = f'NSZ GUI {GUI_TITLE_VERSION}'
 		self.icon = getGuiPath('nsZip.png')
 		root = FloatLayout()
 		with open(getGuiPath('shaders/plasma.shader')) as stream:
@@ -51,7 +115,7 @@ class GUI(App):
 		root.add_widget(self.rootWidget)
 		self.settings_cls = MySettingsWithTabbedPanel
 		return root
-	
+
 	def on_start(self, *args):
 		if platform == 'win' and int(self.config.get('Tools', 'kivy_topmost')) == 1:
 			import nsz.gui.KivyOnTop
@@ -96,7 +160,7 @@ class GUI(App):
 	def close_settings(self, settings=None):
 		Logger.info("main.py: App.close_settings: {0}".format(settings))
 		super(GUI, self).close_settings(settings)
-		
+
 class MySettingsWithTabbedPanel(SettingsWithTabbedPanel):
 	def on_close(self):
 		Logger.info("main.py: MySettingsWithTabbedPanel.on_close")

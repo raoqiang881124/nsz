@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Linux",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/.devcontainer/build-linux.sh"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build macOS",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/.devcontainer/build-macos.sh"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Windows",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/.devcontainer/build-windows.sh"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}

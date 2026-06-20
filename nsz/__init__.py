@@ -22,6 +22,7 @@ from nsz.undupe import undupe
 import enlighten
 import time
 import sys
+import os
 
 class VerificationFailed:
     def __init__(self, exception, in_file):
@@ -92,6 +93,37 @@ err = []
 machineReadableOutput = False
 minimalOutput = False
 
+
+def configure_linux_gui_env():
+	if not sys.platform.startswith('linux'):
+		return
+
+	# Ensure Kivy uses SDL2 and pick a sensible Linux video driver before
+	# importing GUI modules. Users can override via environment variables.
+	os.environ.setdefault('KIVY_WINDOW', 'sdl2')
+	requestedDriver = os.environ.get('NSZ_GUI_VIDEO_DRIVER')
+	if requestedDriver:
+		os.environ['SDL_VIDEODRIVER'] = requestedDriver
+	elif 'SDL_VIDEODRIVER' not in os.environ:
+		if os.environ.get('WAYLAND_DISPLAY') and os.environ.get('DISPLAY'):
+			# Packaged SDL2 commonly works more reliably via XWayland than native
+			# Wayland in self-contained binaries.
+			os.environ['SDL_VIDEODRIVER'] = 'x11'
+		elif os.environ.get('WAYLAND_DISPLAY'):
+			os.environ['SDL_VIDEODRIVER'] = 'wayland'
+		elif os.environ.get('DISPLAY'):
+			os.environ['SDL_VIDEODRIVER'] = 'x11'
+
+
+def configure_windows_gui_env():
+	if not sys.platform.startswith('win'):
+		return
+
+	# Prefer ANGLE on Windows so GUI startup does not depend on legacy
+	# OpenGL 1.1 driver compatibility in some VM/RDP/Wine contexts.
+	os.environ.setdefault('KIVY_GL_BACKEND', 'angle_sdl2')
+	os.environ.setdefault('KIVY_GRAPHICS', 'gles')
+
 def main():
 	global err
 	global machineReadableOutput
@@ -108,27 +140,15 @@ def main():
 			if (args.minimal_output):
 				minimalOutput = True
 		else:
-			# There are no command line arguments so assume that the user wants to open the GUI.
-			kivyConfigPathObj = Path.home().joinpath('.kivy').joinpath('config.ini')
-			if kivyConfigPathObj.exists():
-				kivyConfigPath = str(kivyConfigPathObj)
-				with open(kivyConfigPath, 'r', encoding='utf-8') as f:
-					lines = f.readlines()
-				brokenKivyConfig = False
-				for i, line in enumerate(lines):
-					if line.startswith('default_font') and 'MPLUS1p-Medium.ttf' in line:
-						brokenKivyConfig = True
-						lines[i] = "default_font = ['Roboto', 'data/fonts/Roboto-Regular.ttf', 'data/fonts/Roboto-Italic.ttf', 'data/fonts/Roboto-Bold.ttf', 'data/fonts/Roboto-BoldItalic.ttf']\n"
-				if brokenKivyConfig:
-					Print.info(f'[INFO   ] Fixing {kivyConfigPath}')
-					with open(kivyConfigPath, 'w', encoding='utf-8') as f:
-						f.writelines(lines)
+			# There are no command line arguments. Open the GUI if it is available or print the help output.
 			try:
-				from nsz.gui.NSZ_GUI import GUI
+				configure_windows_gui_env()
+				configure_linux_gui_env()
+				from nsz.gui.NSZ_GUI import launchGui
 			except ImportError:
-				Print.error(102, "Failed to import the GUI - is it installed?")
+				ParseArguments.parse(args = ['-h'])
 				return
-			args = GUI().run()
+			args = launchGui()
 			if args == None:
 				Print.info("Done!")
 				return

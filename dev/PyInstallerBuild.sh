@@ -1,8 +1,16 @@
+#!/bin/sh
+# Builds the NSZ GUI binary for the current OS (Linux, Windows, or macOS).
+set -e
+
 pip3 install -r ./requirements-pyinstaller.txt
-cd ../nsz
+cd ..
 rm -rf build
 rm -rf dist
-pyinstaller ./__init__.spec
-cd dist/__init__
+pyinstaller dev/nsz-gui.spec
+cd dist/nsz-gui
 read -p "Press any key to test ..."
-./nsz.exe
+if [ -f ./nsz-gui.exe ]; then
+	./nsz-gui.exe
+else
+	./nsz-gui
+fi
