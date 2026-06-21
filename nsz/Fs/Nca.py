@@ -1,15 +1,7 @@
-from nsz.nut import aes128
-from nsz.nut import Hex
 from binascii import hexlify as hx, unhexlify as uhx
-from struct import pack as pk, unpack as upk
-from hashlib import sha256
-import os
-import re
-import pathlib
 from nsz.nut import Keys
 from nsz.nut import Print
 from nsz import Fs
-from nsz import nut
 from nsz.Fs.File import File
 from nsz.Fs.Rom import Rom
 from nsz.Fs.Pfs0 import Pfs0
@@ -92,7 +84,7 @@ class NcaHeader(File):
 
         try:
             self.contentType = Fs.Type.Content(self.contentType)
-        except:
+        except ValueError:
             pass
 
         self.cryptoType = self.readInt8()
@@ -276,7 +268,7 @@ class Nca(File):
 
             try:
                 section.partition(fs.sectionStart, section.size - fs.sectionStart, fs)
-            except BaseException as e:
+            except BaseException:
                 pass
                 # Print.info(e)
                 # raise
@@ -300,7 +292,7 @@ class Nca(File):
             f = self[0]["main"]
             f.seek(0x40)
             return hx(f.read(0x20)).decode("utf8").upper()
-        except IOError as e:
+        except IOError:
             pass
         except:
             raise

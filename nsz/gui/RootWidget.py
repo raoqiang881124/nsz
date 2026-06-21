@@ -1,14 +1,13 @@
-from os import scandir
 from pathlib import Path
+from kivy.app import App
 from kivy.lang import Builder
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.popup import Popup
 from kivy.properties import ObjectProperty
-from nsz.gui.FileDialogs import *
-from nsz.gui.AboutDialog import *
-from nsz.gui.GuiPath import *
-from nsz.PathTools import *
+from nsz.gui.FileDialogs import OpenFileDialog
+from nsz.gui.AboutDialog import AboutDialog
+from nsz.gui.GuiPath import getGuiPath
 from nsz.nut import Print
-from nsz import FileExistingChecks
 
 
 class RootWidget(FloatLayout):

@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import os
-import re
-import time
-import json
-from nsz import nut
-import operator
-from nsz.nut import Print
 
 
 global titles
@@ -34,15 +27,15 @@ def data(region=None, language=None):
     global titles
 
     if region:
-        if not region in regionTitles:
+        if region not in regionTitles:
             regionTitles[region] = {}
 
-        if not language in regionTitles[region]:
+        if language not in regionTitles[region]:
             regionTitles[region][language] = {}
 
         return regionTitles[region][language]
 
-    if titles == None:
+    if titles is None:
         titles = {}
     return titles
 
@@ -57,7 +50,7 @@ def items(region=None, language=None):
 def get(key, region=None, language=None):
     key = key.upper()
 
-    if not key in data(region, language):
+    if key not in data(region, language):
         t = Title()
         t.setId(key)
         data(region, language)[key] = t
@@ -81,4 +74,4 @@ def keys(region=None, language=None):
     if region:
         return regionTitles[region][language].keys()
 
-    return titles.keys() if titles != None else {}
+    return titles.keys() if titles is not None else {}

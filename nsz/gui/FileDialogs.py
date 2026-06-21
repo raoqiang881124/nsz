@@ -1,10 +1,9 @@
 from kivy.lang import Builder
 from kivy.uix.floatlayout import FloatLayout
 from kivy.properties import ObjectProperty
-from kivy.uix.popup import Popup
 from kivy.uix.button import Button
 from kivy.utils import platform
-from nsz.gui.GuiPath import *
+from nsz.gui.GuiPath import getGuiPath
 
 Builder.load_file(getGuiPath("layout/OpenFileDialog.kv"))
 
@@ -33,12 +32,12 @@ class OpenFileDialog(FloatLayout):
                     on_press=self.drive_selection_changed,
                 )
                 self.ids.drives_list.add_widget(button)
-                if self.selected == None:
+                if self.selected is None:
                     self.drive_selection_changed(button)
 
     def drive_selection_changed(self, *args):
         self.ids.filechooser.path = args[0].text
-        if self.selected != None:
+        if self.selected is not None:
             self.selected.background_color = self.backgroundColor
         self.selected = args[0]
         args[0].background_color = self.selectedColor

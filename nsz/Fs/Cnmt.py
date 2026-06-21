@@ -1,6 +1,6 @@
 from nsz.Fs.File import File
-from binascii import hexlify as hx, unhexlify as uhx
-from nsz.nut import Print, Keys
+from binascii import hexlify as hx
+from nsz.nut import Print
 
 
 class MetaEntry:

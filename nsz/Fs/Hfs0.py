@@ -1,18 +1,11 @@
 import sys
-from nsz.nut import aes128
-from nsz.nut import Hex
-from binascii import hexlify as hx, unhexlify as uhx
-from struct import pack as pk, unpack as upk
 from nsz.Fs.File import BaseFile
-from nsz.Fs.File import File
 from nsz.Fs.Ticket import Ticket
-from hashlib import sha256
 from nsz.Fs.Pfs0 import Pfs0
 from nsz.Fs.BaseFs import BaseFs
 import os
 import re
 from pathlib import Path
-from nsz.nut import Keys
 from nsz.nut import Print
 from nsz.nut import Titles
 from nsz import Fs
@@ -138,7 +131,7 @@ class Hfs0(Pfs0):
         cryptoCounter=-1,
         meta_only=False,
     ):
-        r = super(BaseFs, self).open(
+        super(BaseFs, self).open(
             path, mode, cryptoType, cryptoKey, cryptoCounter, meta_only
         )
         self.rewind()
@@ -178,7 +171,7 @@ class Hfs0(Pfs0):
 
             self.readInt32()  # junk data
 
-            if meta_only and (name != "secure" and not "cnmt" in name):
+            if meta_only and (name != "secure" and "cnmt" not in name):
                 continue
             f = Fs.factory(Path(name))
 
@@ -189,7 +182,7 @@ class Hfs0(Pfs0):
             self.files.append(file)
 
             # add title keys to nut.Titles if we happen to see a ticket
-            if type(file) == Ticket:
+            if isinstance(file, Ticket):
                 ticket = file
                 ticket.open(None, None)
                 if ticket.titleKey() != ("0" * 32):

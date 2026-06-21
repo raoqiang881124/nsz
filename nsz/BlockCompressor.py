@@ -1,17 +1,13 @@
 import sys
-from os import remove
 from nsz.nut import Keys, Print
 from time import sleep
-from pathlib import Path
 from traceback import format_exc
 from zstandard import ZstdCompressionParameters, ZstdCompressor
 from nsz.SectionFs import isNcaPacked, sortedFs
 from multiprocessing import Process, Manager
-from nsz.Fs import Pfs0, Hfs0, Nca, Type, Ticket, Xci, factory
-from nsz.PathTools import *
-from nsz.ParseArguments import *
+from nsz.Fs import Pfs0, Hfs0, Nca, Type, Xci, factory
+from nsz.ParseArguments import ParseArguments
 import enlighten
-import sys
 
 if hasattr(sys, "getandroidapilevel"):
     from nsz.ThreadSafeCounterManager import Counter
@@ -193,7 +189,7 @@ def blockCompressContainer(
                 decompressedBytes = UNCOMPRESSABLE_HEADER_SIZE
                 compressedBytes = f.tell()
 
-                if machineReadableOutput == False and minimalOutput == False:
+                if not machineReadableOutput and not minimalOutput:
                     BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
                     bar = enlighten.Counter(
                         total=nspf.size // 1048576,
@@ -232,7 +228,7 @@ def blockCompressContainer(
                 partNr = 0
                 decompressedBytesOld = nspf.tell() // 1048576
 
-                if machineReadableOutput == False and minimalOutput == False:
+                if not machineReadableOutput and not minimalOutput:
                     bar.count = nspf.tell() // 1048576
                     subBars.count = f.tell() // 1048576
                     bar.refresh()
@@ -278,7 +274,7 @@ def blockCompressContainer(
                     ):  # Refresh every 10 MB
                         decompressedBytesOld = decompressedBytes
 
-                        if machineReadableOutput == False and minimalOutput == False:
+                        if not machineReadableOutput and not minimalOutput:
                             bar.count = decompressedBytes // 1048576
                             subBars.count = compressedBytes // 1048576
                             bar.refresh()
@@ -296,7 +292,7 @@ def blockCompressContainer(
                 partitions[partNr] = None
                 endPos = f.tell()
 
-                if machineReadableOutput == False and minimalOutput == False:
+                if not machineReadableOutput and not minimalOutput:
                     bar.count = decompressedBytes // 1048576
                     subBars.count = compressedBytes // 1048576
                     bar.close()
@@ -382,7 +378,7 @@ def blockCompressNsp(
         Print.progress("Complete", {"filePath": str(nszPath)})
         sys.stdout.flush()
     except BaseException as ex:
-        if not ex is KeyboardInterrupt:
+        if ex is not KeyboardInterrupt:
             Print.error(200, format_exc())
         if nszPath.is_file():
             nszPath.unlink()
@@ -421,7 +417,7 @@ def blockCompressXci(
                 xci.hfs0.written = False
                 hfsPartitionOut = xci.hfs0.add(partitionIn._path, 0)
                 with Hfs0.Hfs0Stream(hfsPartitionOut, xci.f) as partitionOut:
-                    if keep == True or partitionIn._path == "secure":
+                    if keep or partitionIn._path == "secure":
                         blockCompressContainer(
                             partitionIn,
                             partitionOut,
@@ -443,7 +439,7 @@ def blockCompressXci(
         Print.progress("Complete", {"filePath": str(xczPath)})
         sys.stdout.flush()
     except BaseException as ex:
-        if not ex is KeyboardInterrupt:
+        if ex is not KeyboardInterrupt:
             Print.error(201, format_exc())
         if xczPath.is_file():
             xczPath.unlink()

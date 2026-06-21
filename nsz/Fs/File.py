@@ -1,9 +1,6 @@
-from enum import IntEnum
 import nsz.Fs.Type
-from nsz.nut import aes128, Print, Hex
-from binascii import hexlify as hx, unhexlify as uhx
+from nsz.nut import aes128, Print
 import hashlib
-import os.path
 
 
 class BaseFile:
@@ -29,7 +26,7 @@ class BaseFile:
         self._bufferAlign = 0x1000
         self._bufferDirty = False
 
-        if path and mode != None:
+        if path and mode is not None:
             self.open(path, mode, cryptoType, cryptoKey, cryptoCounter)
 
         self.setupCrypto(cryptoType, cryptoKey, cryptoCounter)
@@ -76,7 +73,7 @@ class BaseFile:
         self._children.append(n)
 
         # Print.info('created partition for %s %x, size = %d' % (n.__class__.__name__, offset, size))
-        if autoOpen == True:
+        if autoOpen:
             n.open(None, None, cryptoType, cryptoKey, cryptoCounter, meta_only)
 
         return n
@@ -118,7 +115,7 @@ class BaseFile:
         return int.from_bytes(self.read(size), byteorder=byteorder, signed=signed)
 
     def write(self, value, size=None):
-        if size != None:
+        if size is not None:
             value = value + b"\0x00" * (size - len(value))
         # Print.info('writing to ' + hex(self.f.tell()) + ' ' + self.f.__class__.__name__)
         # Hex.dump(value)
@@ -227,7 +224,7 @@ class BaseFile:
         cryptoCounter=-1,
         meta_only=False,
     ):
-        if path != None:
+        if path is not None:
             if self.isOpen():
                 self.close()
 
@@ -275,7 +272,7 @@ class BaseFile:
         return self.tell() >= self.size
 
     def isOpen(self):
-        return self.f != None
+        return self.f is not None
 
     def setCounter(self, ofs):
         ctr = self.cryptoCounter.copy()
@@ -341,8 +338,8 @@ class BufferedFile(BaseFile):
             return b""
 
         if (
-            self._bufferOffset == None
-            or self._buffer == None
+            self._bufferOffset is None
+            or self._buffer is None
             or self._relativePos < self._bufferOffset
             or (self._relativePos + size) > self._bufferOffset + len(self._buffer)
         ):
@@ -377,8 +374,8 @@ class BufferedFile(BaseFile):
         size = len(value)
 
         if (
-            self._bufferOffset == None
-            or self._buffer == None
+            self._bufferOffset is None
+            or self._buffer is None
             or self._relativePos < self._bufferOffset
             or (self._relativePos + size) > self._bufferOffset + len(self._buffer)
         ):
@@ -397,7 +394,7 @@ class BufferedFile(BaseFile):
         return
 
     def flushBuffer(self):
-        if self.f != None and self._buffer != None and self._bufferDirty == True:
+        if self.f is not None and self._buffer is not None and self._bufferDirty:
             # Print.info('writing dirty page')
             # Hex.dump(self._buffer)
             super(BufferedFile, self).seek(self._bufferOffset)
@@ -503,7 +500,7 @@ class MemoryFile(File):
             self.buffer = self.crypto.decrypt(self.buffer)
 
     def read(self, size=None, direct=False):
-        if size == None:
+        if size is None:
             size = self.size - self._relativePos
 
         return self.buffer[self._relativePos : self._relativePos + size]

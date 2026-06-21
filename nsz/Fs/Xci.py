@@ -1,4 +1,4 @@
-from binascii import hexlify as hx, unhexlify as uhx
+from binascii import hexlify as hx
 from nsz.Fs.File import File
 from nsz.Fs.File import BaseFile
 from nsz.Fs.Hfs0 import Hfs0
@@ -94,11 +94,8 @@ class XciStream(BaseFile):
     def close(self):
         if self.isOpen():
             if self.hfs0:
-                hfs0Size = self.hfs0.actualSize
                 self.hfs0.close()
                 self.hfs0 = None
-            else:
-                hfs0Size = 0
 
             self.seek(0)
             self.writeHeader()
@@ -106,7 +103,7 @@ class XciStream(BaseFile):
             super(XciStream, self).close()
 
     def write(self, value, size=None):
-        if size != None:
+        if size is not None:
             value = value + "\0x00" * (size - len(value))
         return self.f.write(value)
 
@@ -328,7 +325,7 @@ class Xci(File):
         cryptoCounter=-1,
         meta_only=False,
     ):
-        r = super(Xci, self).open(
+        super(Xci, self).open(
             path, mode, cryptoType, cryptoKey, cryptoCounter, meta_only
         )
         if self.isFullXci():

@@ -1,23 +1,19 @@
 from nsz.nut import aes128
 from nsz.nut import Hex
-from binascii import hexlify as hx, unhexlify as uhx
-from struct import pack as pk, unpack as upk
-from nsz.Fs.File import File
-from hashlib import sha256
-from nsz import Fs
+from binascii import hexlify as hx
+from struct import pack as pk
 import os
 import re
-import pathlib
 from nsz.nut import Keys
 from nsz.nut import Print
 from nsz.Fs.Pfs0 import Pfs0
 from nsz.Fs.Ticket import Ticket
 from nsz.Fs.Nca import Nca
 import enlighten
-import shutil
 from nsz.nut import Titles
 from nsz.nut.Titles import Title
-from nsz.PathTools import *
+from pathlib import Path
+from nsz.PathTools import expandFiles
 
 MEDIA_SIZE = 0x200
 
@@ -45,12 +41,12 @@ class Nsp(Pfs0):
         # self.unlock()
 
     def getFileSize(self):
-        if self.fileSize == None:
+        if self.fileSize is None:
             self.fileSize = os.path.getsize(self.path)
         return self.fileSize
 
     def getFileModified(self):
-        if self.fileModified == None:
+        if self.fileModified is None:
             self.fileModified = os.path.getmtime(self.path)
         return self.fileModified
 
@@ -144,18 +140,18 @@ class Nsp(Pfs0):
             self.hasValidTicket = (
                 True if value and int(value) != 0 else False
             ) or self.title().isUpdate
-        except:
+        except Exception:
             pass
 
     # extractedNcaMeta
 
     def getExtractedNcaMeta(self):
-        if hasattr(self, "extractedNcaMeta") and self.extractedNcaMeta == True:
+        if hasattr(self, "extractedNcaMeta") and self.extractedNcaMeta:
             return 1
         return 0
 
     def setExtractedNcaMeta(self, val):
-        if val and (val != 0 or val == True):
+        if val and (val != 0 or val is True):
             self.extractedNcaMeta = True
         else:
             self.extractedNcaMeta = False
@@ -163,7 +159,7 @@ class Nsp(Pfs0):
     def getHasValidTicket(self):
         if self.title().isUpdate:
             return 1
-        return 1 if self.hasValidTicket and self.hasValidTicket == True else 0
+        return 1 if self.hasValidTicket and self.hasValidTicket is True else 0
 
     def setId(self, id):
         if re.match(r"[A-F0-9]{16}", id, re.I):
@@ -175,7 +171,7 @@ class Nsp(Pfs0):
     def setTimestamp(self, timestamp):
         try:
             self.timestamp = int(str(timestamp), 10)
-        except:
+        except Exception:
             pass
 
     def getTimestamp(self):
@@ -254,7 +250,7 @@ class Nsp(Pfs0):
         }
 
     def ticket(self):
-        for f in (f for f in self if type(f) == Ticket):
+        for f in (f for f in self if isinstance(f, Ticket)):
             return f
         self.ticketless = True
         # Exception suppressed to allow compress/decompress of ticketless -single base game or multicontent- dump files.
@@ -322,7 +318,7 @@ class Nsp(Pfs0):
             raise IOError("please remove titlerights first")
 
         if (
-            newMasterKeyRev == None and rightsId == 0
+            newMasterKeyRev is None and rightsId == 0
         ) or masterKeyRev == newMasterKeyRev:
             Print.info("Nothing to do")
             return
@@ -333,7 +329,7 @@ class Nsp(Pfs0):
         Print.info("masterKeyRev =\t" + hex(masterKeyRev))
 
         for nca in self:
-            if type(nca) == Nca:
+            if isinstance(nca, Nca):
                 if nca.header.getCryptoType2() != masterKeyRev:
                     pass
                     raise IOError("Mismatched masterKeyRevs!")
@@ -346,7 +342,7 @@ class Nsp(Pfs0):
         ticket.setTitleKeyBlock(int.from_bytes(newTitleKey, "big"))
 
         for nca in self:
-            if type(nca) == Nca:
+            if isinstance(nca, Nca):
                 if nca.header.getCryptoType2() != newMasterKeyRev:
                     Print.info(
                         "writing masterKeyRev for %s, %d -> %s"
@@ -414,7 +410,7 @@ class Nsp(Pfs0):
         Print.info("masterKeyRev =\t" + hex(masterKeyRev))
 
         for nca in self:
-            if type(nca) == Nca:
+            if isinstance(nca, Nca):
                 if nca.header.getCryptoType2() != masterKeyRev:
                     pass
                     raise IOError("Mismatched masterKeyRevs!")
@@ -422,7 +418,7 @@ class Nsp(Pfs0):
         ticket.setRightsId(0)
 
         for nca in self:
-            if type(nca) == Nca:
+            if isinstance(nca, Nca):
                 if nca.header.getRightsId() == 0:
                     continue
 
@@ -447,7 +443,7 @@ class Nsp(Pfs0):
             targetValue = 0
 
         for nca in self:
-            if type(nca) == Nca:
+            if isinstance(nca, Nca):
                 if nca.header.getIsGameCard() == targetValue:
                     continue
 
@@ -478,7 +474,6 @@ class Nsp(Pfs0):
         outf.write(hd)
         t.update(len(hd))
 
-        done = 0
         for f_str in files:
             for filePath in expandFiles(Path(f_str)):
                 Print.info("\t\tAppending %s..." % os.path.basename(filePath))
@@ -527,7 +522,7 @@ class Nsp(Pfs0):
 
     def verifyKey(self, key):
         for f in self:
-            if type(f) == Nca:
+            if isinstance(f, Nca):
                 pass
 
     def verify(self):

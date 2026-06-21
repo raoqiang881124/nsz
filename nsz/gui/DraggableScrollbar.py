@@ -2,15 +2,9 @@
 import kivy
 
 kivy.require("1.5.1")
-from kivy.app import App
-from kivy.uix.button import Button
-from kivy.uix.stacklayout import StackLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.textinput import TextInput
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.recycleview import RecycleView
-from kivy.uix.slider import Slider
-from functools import partial
+from kivy.uix.gridlayout import GridLayout  # noqa: E402
+from kivy.uix.slider import Slider  # noqa: E402
+from functools import partial  # noqa: E402
 
 
 class DraggableScrollbar(GridLayout):

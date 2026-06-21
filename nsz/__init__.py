@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from sys import path
 from pathlib import Path
 
 from sys import argv
 from nsz.nut import Keys, Print
-from os import listdir, _exit, remove
+from os import remove
 from time import sleep
-from nsz.Fs import Nsp, Hfs0, factory
+from nsz.Fs import Nsp, factory
 from nsz.BlockCompressor import blockCompress
 from nsz.SolidCompressor import solidCompress
 from traceback import format_exc
@@ -23,12 +22,20 @@ from nsz.FileExistingChecks import (
     AllowedToWriteOutfile,
     delete_source_file,
 )
-from nsz.ParseArguments import *
-from nsz.PathTools import *
-from nsz.ExtractTitlekeys import *
+from nsz.ParseArguments import ParseArguments
+from nsz.PathTools import (
+    changeExtension,
+    expandFiles,
+    getExtensionName,
+    isCompressedGame,
+    isCompressedGameFile,
+    isGame,
+    isUncompressedGame,
+    isXciXcz,
+)
+from nsz.ExtractTitlekeys import extractTitlekeys
 from nsz.undupe import undupe
 import enlighten
-import time
 import sys
 import os
 
@@ -248,7 +255,7 @@ def main():
                 ParseArguments.parse(args=["-h"])
                 return
             args = launchGui()
-            if args == None:
+            if args is None:
                 Print.info("Done!")
                 return
 
@@ -369,7 +376,7 @@ def main():
                             argOutFolder if argOutFolder else filePath.parent.absolute()
                         )
                         if filePath.suffix == ".nsp":
-                            if not outFolder in targetDictNsz:
+                            if outFolder not in targetDictNsz:
                                 targetDictNsz[outFolder] = CreateTargetDict(
                                     outFolder, args, ".nsz"
                                 )
@@ -378,7 +385,7 @@ def main():
                             ):
                                 continue
                         elif filePath.suffix == ".xci":
-                            if not outFolder in targetDictXcz:
+                            if outFolder not in targetDictXcz:
                                 targetDictXcz[outFolder] = CreateTargetDict(
                                     outFolder, args, ".xcz"
                                 )
@@ -391,7 +398,7 @@ def main():
                             sourceFileToDelete.append(filePath)
                     except KeyboardInterrupt:
                         raise
-                    except BaseException as e:
+                    except BaseException:
                         Print.error(104, "Error while compressing file: %s" % filePath)
                         err.append({"filename": filePath, "error": format_exc()})
                         Print.exception()
@@ -422,7 +429,7 @@ def main():
                 p.start()
                 pool.append(p)
 
-            if machineReadableOutput == False:
+            if not machineReadableOutput:
                 # Create the progress bar(s).
                 if not minimalOutput:
                     for i in range(parallelTasks):
@@ -446,7 +453,7 @@ def main():
                 pleaseNoPrint.increment()
 
                 # Show the progress bar only if the output is human readable.
-                if machineReadableOutput == False:
+                if not machineReadableOutput:
                     if minimalOutput:
                         totalRead = 0
                         totalSize = 0
@@ -486,7 +493,7 @@ def main():
             while readyForWork.value() > 0:
                 sleep(0.02)
 
-            if machineReadableOutput == False:
+            if not machineReadableOutput:
                 if minimalOutput:
                     Print.progress("Complete", {"filePath": ""})
                 else:
@@ -512,7 +519,7 @@ def main():
                             argOutFolder if argOutFolder else filePath.parent.absolute()
                         )
                         if filePath.suffix == ".nsz":
-                            if not outFolder in targetDictNsz:
+                            if outFolder not in targetDictNsz:
                                 targetDictNsz[outFolder] = CreateTargetDict(
                                     outFolder, args, ".nsp"
                                 )
@@ -521,7 +528,7 @@ def main():
                             ):
                                 continue
                         elif filePath.suffix == ".xcz":
-                            if not outFolder in targetDictXcz:
+                            if outFolder not in targetDictXcz:
                                 targetDictXcz[outFolder] = CreateTargetDict(
                                     outFolder, args, ".xci"
                                 )
@@ -545,7 +552,7 @@ def main():
                             delete_source_file(filePath, outFolder)
                     except KeyboardInterrupt:
                         raise
-                    except BaseException as e:
+                    except BaseException:
                         Print.error(
                             105, "Error while decompressing file: {0}".format(filePath)
                         )
@@ -575,7 +582,7 @@ def main():
                             verify(filePath, args.fix_padding, True, True)
                     except KeyboardInterrupt:
                         raise
-                    except BaseException as e:
+                    except BaseException:
                         Print.error(
                             106, "Error while verifying file: {0}".format(filePath)
                         )

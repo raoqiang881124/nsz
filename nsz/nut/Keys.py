@@ -1,7 +1,9 @@
-import os, sys, re
+import os
+import sys
+import re
 from traceback import format_exc
 from nsz.nut import aes128
-from binascii import crc32, hexlify as hx, unhexlify as uhx
+from binascii import crc32, unhexlify as uhx
 from nsz.nut import Print
 from pathlib import Path
 import hashlib
@@ -106,7 +108,7 @@ def generateKek(src, masterKey, kek_seed, key_seed):
     crypto = aes128.AESECB(kek)
     src_kek = crypto.decrypt(src)
 
-    if key_seed != None:
+    if key_seed is not None:
         crypto = aes128.AESECB(src_kek)
         return crypto.decrypt(key_seed)
     else:

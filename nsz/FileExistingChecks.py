@@ -1,10 +1,9 @@
 from nsz.Fs import Pfs0, Nca, Type, factory
-from os import scandir, remove
+from os import remove
 from pathlib import Path
 from re import search
 from nsz.nut import Print
-from nsz.PathTools import *
-import os
+from nsz.PathTools import changeExtension, expandFiles, isGame, isXciXcz, targetExtension
 
 
 def ExtractHashes(container):
@@ -24,7 +23,7 @@ def ExtractTitleIDAndVersion(gamePath, args=None):
     version = -1
     gameName = Path(gamePath).name
     titleIdResult = search(r"0100[0-9A-Fa-f]{12}", gameName)
-    if args == None or not args.alwaysParseCnmt:
+    if args is None or not args.alwaysParseCnmt:
         if titleIdResult:
             titleId = titleIdResult.group().upper()
         versionResult = search(r"\[v\d+\]", gameName)
@@ -32,7 +31,7 @@ def ExtractTitleIDAndVersion(gamePath, args=None):
             version = int(versionResult.group()[2:-1])
         if titleId != "" and version > -1 and version % 65536 == 0:
             return (titleId, version)
-        elif args != None and not args.parseCnmt:
+        elif args is not None and not args.parseCnmt:
             return None
     gamePath = Path(gamePath).resolve()
     container = factory(gamePath)
@@ -65,12 +64,12 @@ def CreateTargetDict(targetFolder, args, extension, filesAtTarget={}, alreadyExi
                 isGame(filePath)
                 or filePath.suffix == ".nspz"
                 or filePath.suffix == ".nsx"
-            ) and (extension == None or filePath.suffix == extension):
+            ) and (extension is None or filePath.suffix == extension):
                 Print.info("{0}".format(filePath))
                 Print.info("Extract TitleID/Version: {0} ".format(filePath.name))
                 filesAtTarget[filePath.name.lower()] = filePath_str
                 extractedIdVersion = ExtractTitleIDAndVersion(filePath, args)
-                if extractedIdVersion == None:
+                if extractedIdVersion is None:
                     if args.parseCnmt or args.alwaysParseCnmt:
                         Print.error(
                             300,
@@ -87,9 +86,9 @@ def CreateTargetDict(targetFolder, args, extension, filesAtTarget={}, alreadyExi
                     continue
                 titleID, version = extractedIdVersion
                 titleIDEntry = alreadyExists.get(titleID)
-                if titleIDEntry == None:
+                if titleIDEntry is None:
                     titleIDEntry = {version: [filePath_str]}
-                elif not version in titleIDEntry:
+                elif version not in titleIDEntry:
                     titleIDEntry[version] = [filePath_str]
                 else:
                     titleIDEntry[version].append(filePath_str)
@@ -105,7 +104,7 @@ def CreateTargetDict(targetFolder, args, extension, filesAtTarget={}, alreadyExi
 def AllowedToWriteOutfile(filePath, targetFileExtension, targetDict, args):
     (filesAtTarget, alreadyExists) = targetDict
     extractedIdVersion = ExtractTitleIDAndVersion(filePath, args)
-    if extractedIdVersion == None:
+    if extractedIdVersion is None:
         if args.parseCnmt or args.alwaysParseCnmt:
             Print.error(
                 300,
@@ -129,7 +128,7 @@ def AllowedToWriteOutfile(filePath, targetFileExtension, targetDict, args):
     (titleIDExtracted, versionExtracted) = extractedIdVersion
     titleIDEntry = alreadyExists.get(titleIDExtracted)
 
-    if titleIDEntry != None:
+    if titleIDEntry is not None:
         DuplicateEntriesToDelete = []
         OutdatedEntriesToDelete = []
         exitFlag = False
@@ -180,7 +179,7 @@ def AllowedToWriteOutfile(filePath, targetFileExtension, targetDict, args):
 def fileNameCheck(filePath, targetFileExtension, filesAtTarget, removeOld, overwrite):
     outFile = str(Path(changeExtension(filePath, targetFileExtension)).name).lower()
     filePath = filesAtTarget.get(outFile)
-    if filePath == None:
+    if filePath is None:
         return True
     if overwrite:
         remove(filePath)

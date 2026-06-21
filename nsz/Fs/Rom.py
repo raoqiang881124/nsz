@@ -1,15 +1,8 @@
-from binascii import hexlify as hx, unhexlify as uhx
-from struct import pack as pk, unpack as upk
-from nsz.Fs.File import File
+from binascii import hexlify as hx
 from nsz.Fs.File import MemoryFile
-import os
-import re
-import pathlib
-from nsz.nut import Keys
 from nsz.nut import Print
 from nsz.Fs.BaseFs import BaseFs
 from nsz.Fs.Ivfc import Ivfc
-from nsz.nut import Hex
 
 MEDIA_SIZE = 0x200
 
@@ -45,7 +38,7 @@ class Rom(BaseFs):
         cryptoCounter=-1,
         meta_only=False,
     ):
-        r = super(Rom, self).open(
+        super(Rom, self).open(
             path, mode, cryptoType, cryptoKey, cryptoCounter, meta_only
         )
 

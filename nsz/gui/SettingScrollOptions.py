@@ -1,11 +1,11 @@
-from kivy.uix.settings import *
+from kivy.uix.settings import SettingOptions
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.stacklayout import StackLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
 from kivy.uix.widget import Widget
-from kivy.metrics import *
-from kivy.uix.togglebutton import *
+from kivy.metrics import dp
+from kivy.uix.togglebutton import ToggleButton
 from kivy.uix.button import Button
 
 

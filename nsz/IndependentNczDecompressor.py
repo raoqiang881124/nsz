@@ -6,9 +6,9 @@ from pathlib import Path
 from hashlib import sha256
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
-from binascii import hexlify as hx
 from zstandard import ZstdDecompressor
 from nsz.nut import Print
+from nsz import BlockDecompressorReader
 
 if len(argv) < 3:
     Print.info("usage: decompress.py input.ncz output.nca")
@@ -77,7 +77,6 @@ class Block:
 
 def __decompressNcz(nspf, f):
     ncaHeaderSize = 0x4000
-    blockID = 0
     nspf.seek(0)
     header = nspf.read(ncaHeaderSize)
     start = f.tell()
@@ -94,7 +93,6 @@ def __decompressNcz(nspf, f):
     blockMagic = nspf.read(8)
     nspf.seek(pos)
     useBlockCompression = blockMagic == b"NCZBLOCK"
-    blockSize = -1
     if useBlockCompression:
         BlockHeader = Block(nspf)
         blockDecompressorReader = BlockDecompressorReader.BlockDecompressorReader(

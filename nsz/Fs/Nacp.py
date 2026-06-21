@@ -1,8 +1,6 @@
 from nsz.Fs.File import File
-from binascii import hexlify as hx, unhexlify as uhx
 from enum import IntEnum
 from nsz.nut import Print
-from nsz.nut import Keys
 # Some of this may have changed in 7.x.x+
 
 

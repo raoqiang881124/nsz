@@ -1,7 +1,7 @@
 from pathlib import Path
 from nsz.nut import Print
-from nsz.Fs import Nsp, factory
-from nsz.PathTools import *
+from nsz.Fs import factory
+from nsz.PathTools import expandFiles, isNspNsz
 import json
 
 
@@ -27,7 +27,7 @@ def extractTitlekeys(argsFile):
             else:
                 rightsId = format(ticket.getRightsId(), "x").zfill(32)
                 titleId = rightsId[0:16]
-                if not titleId in titlekeysDict:
+                if titleId not in titlekeysDict:
                     titleKey = format(ticket.getTitleKeyBlock(), "x").zfill(32)
                     titlekeysDict[titleId] = (rightsId, titleKey, filePath.stem)
                     Print.info(
@@ -66,20 +66,20 @@ def extractTitlekeys(argsFile):
                 data = json.load(json_file)
             for key, value in data.items():
                 titleId = value["id"]
-                if titleId == None:
+                if titleId is None:
                     continue
                 if titleId in titlekeysDict:
                     (rightsId, titleKey, name) = titlekeysDict[titleId]
-                    if value["rightsId"] == None:
+                    if value["rightsId"] is None:
                         value["rightsId"] = rightsId
                         saveTrigger = True
                     # elif value["rightsId"] != rightsId:
                     # Print.info("Warn: {0} != {1}".format(value["rightsId"], rightsId))
-                    if value["key"] == None:
+                    if value["key"] is None:
                         Print.info("{0}: Writing key to {1}".format(fileName, titleId))
                         value["key"] = titleKey
                         saveTrigger = True
-            if saveTrigger == True:
+            if saveTrigger:
                 Print.info("Saving {0}".format(fileName))
                 with open(str(filePath), "w") as outfile:
                     json.dump(data, outfile, indent=4, sort_keys=True)

@@ -1,11 +1,8 @@
 from kivy.lang import Builder
 from kivy.uix.floatlayout import FloatLayout
 from kivy.properties import ObjectProperty
-from kivy.uix.popup import Popup
-from nsz.gui.Hyperlink import *
-from kivy.core.window import Window
-from nsz.gui.GuiPath import *
-import os
+from nsz.gui.Hyperlink import HyperlinkLabel
+from nsz.gui.GuiPath import getGuiPath
 
 Builder.load_file(getGuiPath("layout/AboutDialog.kv"))
 

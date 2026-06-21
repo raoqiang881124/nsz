@@ -3,10 +3,10 @@
 # Author: Jakub Bláha
 # License: MIT
 
-name = "KivyOnTop"
-
 import win32gui
 import win32con
+
+name = "KivyOnTop"
 
 
 def find_hwnd(title: str):
@@ -26,7 +26,7 @@ def set_always_on_top(title: str):
 
     global hwnd
 
-    if not "hwnd" in globals():
+    if "hwnd" not in globals():
         find_hwnd(title)
 
     rect = win32gui.GetWindowRect(hwnd)
@@ -45,7 +45,7 @@ def set_not_always_on_top(title: str):
 
     global hwnd
 
-    if not "hwnd" in globals():
+    if "hwnd" not in globals():
         find_hwnd(title)
 
     rect = win32gui.GetWindowRect(hwnd)

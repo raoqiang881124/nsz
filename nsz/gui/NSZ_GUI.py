@@ -1,22 +1,19 @@
-from nsz.gui.GuiPath import *
-from kivy.config import Config
+from nsz.gui.GuiPath import getGuiPath
 from kivy.core.text import LabelBase, DEFAULT_FONT
 from kivy.app import App
 from kivy.core.window import Window
-from kivy.uix.widget import Widget
-from kivy.uix.boxlayout import BoxLayout
-from kivy.factory import Factory
-from nsz.gui.ShaderWidget import *
-from nsz.gui.RootWidget import *
-from nsz.gui.GameList import *
-from kivy.uix.screenmanager import ScreenManager, Screen, FadeTransition
+from kivy.lang import Builder
+from kivy.uix.floatlayout import FloatLayout
+from kivy.utils import platform
+from nsz.gui.ShaderWidget import ShaderWidget
+from nsz.gui.RootWidget import RootWidget
+from nsz.gui.GameList import GameList
 from kivy.uix.settings import SettingsWithTabbedPanel
 from kivy.logger import Logger
-from nsz.gui.SettingScrollOptions import *
+from nsz.gui.SettingScrollOptions import SettingScrollOptions
 from nsz.nut import Print
 from pathlib import Path
 import logging
-import os
 
 try:
     from nsz.version import GUI_VERSION as GUI_TITLE_VERSION

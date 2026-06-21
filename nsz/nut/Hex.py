@@ -36,8 +36,7 @@ def dump(data, size=16):
         hex = bufferToHex(data, index, size)
         ascii = bufferToAscii(data, index, size)
 
-        Print.info(hexFormat.format(hex), end="")
-        Print.info("|", asciiFormat.format(ascii), "|")
+        Print.info(hexFormat.format(hex) + "|" + asciiFormat.format(ascii) + "|")
 
         index += size
         if bytesRead - index < size:

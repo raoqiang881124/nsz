@@ -4,19 +4,15 @@ from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
-from kivy.uix.label import Label
 from kivy.uix.gridlayout import GridLayout
 from kivy.properties import BooleanProperty
 from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.behaviors import FocusBehavior
 from kivy.uix.recycleview.layout import LayoutSelectionBehavior
-from kivy.uix.scrollview import ScrollView
-from kivy.uix.progressbar import ProgressBar
-from kivy.uix.slider import Slider
-from functools import partial
-from nsz.gui.DraggableScrollbar import *
-from nsz.gui.GuiPath import *
-from nsz.PathTools import *
+from kivy.uix.stacklayout import StackLayout
+from nsz.gui.DraggableScrollbar import DraggableScrollbar
+from nsz.gui.GuiPath import getGuiPath
+from nsz.PathTools import isCompressedGameFile, isGame
 from nsz.nut import Print
 from nsz import FileExistingChecks
 
@@ -151,7 +147,7 @@ class GameList(StackLayout):
                             (titleIDExtracted, versionExtracted) = extractedIdVersion
                         else:
                             (titleIDExtracted, versionExtracted) = ("None", 0)
-                        if not filepathStr in self.filelist:
+                        if filepathStr not in self.filelist:
                             requireRefresh = True
                             self.filelist[filepathStr] = (
                                 titleIDExtracted,
@@ -174,7 +170,7 @@ class GameList(StackLayout):
                         (titleIDExtracted, versionExtracted) = extractedIdVersion
                     else:
                         (titleIDExtracted, versionExtracted) = ("None", 0)
-                    if not fullPath in self.filelist:
+                    if fullPath not in self.filelist:
                         self.filelist[fullPath] = (
                             titleIDExtracted,
                             versionExtracted,

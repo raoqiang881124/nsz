@@ -3,10 +3,11 @@ from traceback import format_exc
 from hashlib import sha256
 from nsz.nut import Print, aes128
 from zstandard import ZstdDecompressor
-from nsz.Fs import factory, Type, Pfs0, Hfs0, Nca, Xci
-from nsz.PathTools import *
+from nsz.Fs import factory, Pfs0, Hfs0, Xci
+from nsz.PathTools import changeExtension, isCompressedGameFile, isNspNsz, isXciXcz
 from nsz import Header, BlockDecompressorReader, FileExistingChecks
-import os, enlighten
+import os
+import enlighten
 
 
 class VerificationException(Exception):
@@ -42,7 +43,7 @@ def decompress(filePath, outputDir, fixPadding, statusReportInfo, pleaseNoPrint=
         filePathNca = changeExtension(filePath, ".nca")
         outPath = (
             filePathNca
-            if outputDir == None
+            if outputDir is None
             else str(Path(outputDir).joinpath(Path(filePathNca).name))
         )
         Print.info("Decompressing %s -> %s" % (filePath, outPath), pleaseNoPrint)
@@ -64,7 +65,7 @@ def decompress(filePath, outputDir, fixPadding, statusReportInfo, pleaseNoPrint=
                         pleaseNoPrint,
                     )
         except BaseException as ex:
-            if not ex is KeyboardInterrupt:
+            if ex is not KeyboardInterrupt:
                 Print.error(400, format_exc())
             if Path(outPath).is_file():
                 Path(outPath).unlink()
@@ -200,7 +201,7 @@ def __decompressContainer(
 def __getDecompressedNczSize(nspf):
     UNCOMPRESSABLE_HEADER_SIZE = 0x4000
     nspf.seek(0)
-    header = nspf.read(UNCOMPRESSABLE_HEADER_SIZE)
+    nspf.read(UNCOMPRESSABLE_HEADER_SIZE)
     magic = nspf.read(8)
     if not magic == b"NCZSECTN":
         raise ValueError("No NCZSECTN found! Is this really a .ncz file?")
@@ -219,14 +220,13 @@ def __getDecompressedNczSize(nspf):
 
 def __decompressNcz(nspf, f, statusReportInfo, pleaseNoPrint, stepLabel=None):
     UNCOMPRESSABLE_HEADER_SIZE = 0x4000
-    blockID = 0
     nspf.seek(0)
     header = nspf.read(UNCOMPRESSABLE_HEADER_SIZE)
-    if stepLabel != None:
+    if stepLabel is not None:
         currentStep = stepLabel
     else:
-        currentStep = "Decompress" if f != None else "Verifying"
-    if f != None:
+        currentStep = "Decompress" if f is not None else "Verifying"
+    if f is not None:
         start = f.tell()
     magic = nspf.read(8)
     if not magic == b"NCZSECTN":
@@ -245,7 +245,6 @@ def __decompressNcz(nspf, f, statusReportInfo, pleaseNoPrint, stepLabel=None):
     blockMagic = nspf.read(8)
     nspf.seek(pos)
     useBlockCompression = blockMagic == b"NCZBLOCK"
-    blockSize = -1
     if useBlockCompression:
         Print.info(f"[NCZBLOCK]   Using Block decompression for {nspf._path}")
         BlockHeader = Header.Block(nspf)
@@ -257,7 +256,7 @@ def __decompressNcz(nspf, f, statusReportInfo, pleaseNoPrint, stepLabel=None):
         decompressor = ZstdDecompressor().stream_reader(nspf)
     hash = sha256()
 
-    if statusReportInfo == None:
+    if statusReportInfo is None:
         if not Print.isMinimalOutput():
             BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
             bar = enlighten.Counter(
@@ -274,9 +273,9 @@ def __decompressNcz(nspf, f, statusReportInfo, pleaseNoPrint, stepLabel=None):
             )
     decompressedBytes = len(header)
     decompressedBytesOld = decompressedBytes
-    if f != None:
+    if f is not None:
         f.write(header)
-    if statusReportInfo != None:
+    if statusReportInfo is not None:
         statusReport, id = statusReportInfo
         statusReport[id] = [len(header), 0, nca_size, currentStep]
     else:
@@ -318,13 +317,13 @@ def __decompressNcz(nspf, f, statusReportInfo, pleaseNoPrint, stepLabel=None):
                 break
             if useCrypto:
                 inputChunk = crypto.encrypt(inputChunk)
-            if f != None:
+            if f is not None:
                 f.write(inputChunk)
             hash.update(inputChunk)
             lenInputChunk = len(inputChunk)
             i += lenInputChunk
             decompressedBytes += lenInputChunk
-            if statusReportInfo != None:
+            if statusReportInfo is not None:
                 statusReport[id] = [
                     statusReport[id][0] + chunkSz,
                     statusReport[id][1],
@@ -348,7 +347,7 @@ def __decompressNcz(nspf, f, statusReportInfo, pleaseNoPrint, stepLabel=None):
                     bar.count = decompressedBytes // 1048576
                     bar.refresh()
 
-    if statusReportInfo == None:
+    if statusReportInfo is None:
         if Print.isMinimalOutput():
             Print.progress(
                 "Progress",
@@ -366,7 +365,7 @@ def __decompressNcz(nspf, f, statusReportInfo, pleaseNoPrint, stepLabel=None):
             # the next output from being on the same line as the process bar
             Print.info("\n")
     hexHash = hash.hexdigest()
-    if f != None:
+    if f is not None:
         end = f.tell()
         written = end - start
         return (written, hexHash)
@@ -393,7 +392,7 @@ def __decompressNsz(
             filePathNsp = changeExtension(filePath, ".nsp")
             outPath = (
                 filePathNsp
-                if outputDir == None
+                if outputDir is None
                 else str(Path(outputDir).joinpath(Path(filePathNsp).name))
             )
             Print.info("Decompressing %s -> %s" % (filePath, outPath), pleaseNoPrint)
@@ -434,12 +433,11 @@ def __decompressNsz(
                     "Verifying",
                 )
                 Print.info("[NSP SHA256] " + nsp.getHash())
-                if originalFilePath != None:
-                    originalContainer = factory(originalFilePath)
+                if originalFilePath is not None:
                     CHUNK_SZ = 0x100000
                     originalHash = sha256()
                     filesize = os.path.getsize(str(originalFilePath))
-                    if statusReportInfo == None and not Print.isMinimalOutput():
+                    if statusReportInfo is None and not Print.isMinimalOutput():
                         BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
                         bar = enlighten.Counter(
                             total=filesize // CHUNK_SZ,
@@ -448,7 +446,7 @@ def __decompressNsz(
                             color="yellow",
                             bar_format=BAR_FMT,
                         )
-                    elif statusReportInfo == None and Print.isMinimalOutput():
+                    elif statusReportInfo is None and Print.isMinimalOutput():
                         Print.progress(
                             "Progress",
                             {
@@ -462,7 +460,7 @@ def __decompressNsz(
                         while True:
                             data = f.read(CHUNK_SZ)
                             blockCount += 1
-                            if statusReportInfo != None:
+                            if statusReportInfo is not None:
                                 statusReport, id = statusReportInfo
                                 statusReport[id] = [
                                     blockCount,
@@ -489,9 +487,9 @@ def __decompressNsz(
                                 break
                             originalHash.update(data)
                     originalHashHex = originalHash.hexdigest()
-                    if statusReportInfo == None and not Print.isMinimalOutput():
+                    if statusReportInfo is None and not Print.isMinimalOutput():
                         bar.close()
-                    elif statusReportInfo == None and Print.isMinimalOutput():
+                    elif statusReportInfo is None and Print.isMinimalOutput():
                         Print.progress("Complete", {"filePath": str(originalFilePath)})
                     Print.info("[NSP SHA256] " + originalHashHex)
                     if nsp.getHash() == originalHashHex:
@@ -526,7 +524,7 @@ def __decompressXcz(
         filePathXci = changeExtension(filePath, ".xci")
         outPath = (
             filePathXci
-            if outputDir == None
+            if outputDir is None
             else str(Path(outputDir).joinpath(Path(filePathXci).name))
         )
         Print.info("Decompressing %s -> %s" % (filePath, outPath), pleaseNoPrint)

@@ -1,6 +1,6 @@
 from nsz.Fs.File import File
 from nsz import Fs
-from binascii import hexlify as hx, unhexlify as uhx
+from binascii import hexlify as hx
 from nsz.nut import Print
 from nsz.nut import Keys
 
@@ -47,7 +47,7 @@ class Ticket(File):
         self.signatureType = self.readInt32()
         try:
             self.signatureType = Fs.Type.TicketSignature(self.signatureType)
-        except:
+        except ValueError:
             raise IOError("Invalid ticket format")
 
         self.signaturePadding = 0x40 - (
@@ -240,7 +240,7 @@ class Ticket(File):
                     )
                 )
             )
-        except:
+        except Exception:
             Print.info(
                 tabs + "titleKeyDec = An error occurred while obtaining titleKeyDec"
             )

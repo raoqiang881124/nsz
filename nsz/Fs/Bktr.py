@@ -1,13 +1,5 @@
-from nsz.nut import aes128
-from nsz.nut import Hex
-from binascii import hexlify as hx, unhexlify as uhx
-from struct import pack as pk, unpack as upk
-from nsz.Fs.File import File, MemoryFile
-from hashlib import sha256
-import os
-import re
-import pathlib
-from nsz.nut import Keys, Print
+from nsz.Fs.File import File
+from nsz.nut import Print
 
 MEDIA_SIZE = 0x200
 
@@ -259,17 +251,14 @@ class Bktr1(Bktr):
             bucket = self.buckets[index]
             index += 1
 
-        result = bucket.entries[0]
         for entry in bucket.entries:
             if offset > entry.virtualOffset:
                 break
-            result = entry
 
         return entry
 
     def printInfo(self, maxDepth=3, indent=0):
         super(Bktr1, self).printInfo(maxDepth, indent)
-        tabs = "\t" * indent
 
         for bucket in self.buckets:
             bucket.printInfo(maxDepth, indent + 1)

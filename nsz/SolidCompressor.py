@@ -1,18 +1,13 @@
 import sys
-from os import remove
-from pathlib import Path
 from traceback import format_exc
 from nsz.SectionFs import isNcaPacked, sortedFs
-from nsz.Fs import factory, Ticket, Pfs0, Hfs0, Nca, Type, Xci
+from nsz.Fs import factory, Pfs0, Hfs0, Nca, Type, Xci
 from nsz.nut import Print
 from zstandard import (
     FLUSH_FRAME,
-    COMPRESSOBJ_FLUSH_FINISH,
     ZstdCompressionParameters,
     ZstdCompressor,
 )
-from nsz.PathTools import *
-
 UNCOMPRESSABLE_HEADER_SIZE = 0x4000
 CHUNK_SZ = 0x1000000
 
@@ -117,12 +112,6 @@ def processContainer(
                         header += fs.cryptoCounter
 
                     f.write(header)
-
-                    blockID = 0
-                    chunkRelativeBlockID = 0
-                    startChunkBlockID = 0
-                    blocksHeaderFilePos = f.tell()
-                    compressedblockSizeList = []
 
                     decompressedBytes = UNCOMPRESSABLE_HEADER_SIZE
 
@@ -273,7 +262,7 @@ def solidCompressNsp(
         Print.progress("Complete", {"filePath": str(nszPath)})
         sys.stdout.flush()
     except BaseException as ex:
-        if not ex is KeyboardInterrupt:
+        if ex is not KeyboardInterrupt:
             Print.error(500, format_exc())
         if nszPath.is_file():
             nszPath.unlink()
@@ -315,7 +304,7 @@ def solidCompressXci(
                 xci.hfs0.written = False
                 hfsPartitionOut = xci.hfs0.add(partitionIn._path, 0, pleaseNoPrint)
                 with Hfs0.Hfs0Stream(hfsPartitionOut, xci.f) as partitionOut:
-                    if keep == True or partitionIn._path == "secure":
+                    if keep or partitionIn._path == "secure":
                         processContainer(
                             partitionIn,
                             partitionOut,
@@ -339,7 +328,7 @@ def solidCompressXci(
         Print.progress("Complete", {"filePath": str(xczPath)})
         sys.stdout.flush()
     except BaseException as ex:
-        if not ex is KeyboardInterrupt:
+        if ex is not KeyboardInterrupt:
             Print.error(501, format_exc())
         if xczPath.is_file():
             xczPath.unlink()

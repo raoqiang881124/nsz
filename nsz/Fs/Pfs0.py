@@ -1,20 +1,12 @@
 import sys
-from nsz.nut import aes128
-from nsz.nut import Hex
-from binascii import hexlify as hx, unhexlify as uhx
-from struct import pack as pk, unpack as upk
-from nsz.Fs.File import File
 from nsz.Fs.File import BaseFile
 from hashlib import sha256
 from nsz import Fs
 import os
-import re
 from pathlib import Path
-from nsz.nut import Keys
 from nsz.nut import Print
 from nsz.Fs.BaseFs import BaseFs
 from nsz.nut import Titles
-from nsz.nut import Print
 
 MEDIA_SIZE = 0x200
 
@@ -90,7 +82,7 @@ class Pfs0Stream(BaseFile):
         stringTableSizePadded = len(stringTableNonPadded) + self.allign0x20(
             headerSizeNonPadded
         )
-        if self._stringTableSize == None:
+        if self._stringTableSize is None:
             self._stringTableSize = stringTableSizePadded
         elif len(stringTableNonPadded) > self._stringTableSize:
             self._stringTableSize = len(stringTableNonPadded)
@@ -177,7 +169,7 @@ class Pfs0VerifyStream:
         stringTableSizePadded = len(stringTableNonPadded) + self.allign0x20(
             headerSizeNonPadded
         )
-        if self._stringTableSize == None:
+        if self._stringTableSize is None:
             self._stringTableSize = stringTableSizePadded
         elif len(stringTableNonPadded) > self._stringTableSize:
             self._stringTableSize = len(stringTableNonPadded)
@@ -214,7 +206,6 @@ class Pfs0VerifyStream:
                 stringTable += "\x00" * (self.files[0]["offset"] - headerSize)
         h += stringTable.encode()
 
-        headerHex = h.hex()
         self.binhash.update(h)
 
 
@@ -269,7 +260,7 @@ class Pfs0(BaseFs):
         cryptoCounter=-1,
         meta_only=False,
     ):
-        r = super(Pfs0, self).open(
+        super(Pfs0, self).open(
             path, mode, cryptoType, cryptoKey, cryptoCounter, meta_only
         )
         self.rewind()
@@ -310,7 +301,7 @@ class Pfs0(BaseFs):
 
             self.readInt32()  # junk data
 
-            if meta_only and not "cnmt" in name:
+            if meta_only and "cnmt" not in name:
                 continue
 
             f = Fs.factory(Path(name))
@@ -332,14 +323,14 @@ class Pfs0(BaseFs):
 
             if ticket.titleKey() != ("0" * 32):
                 Titles.get(ticket.titleId()).key = ticket.titleKey()
-        except:
+        except Exception:
             pass
 
         for file in self.files:
             if file != ticket:
                 try:
                     file.open(None, None)
-                except:
+                except Exception:
                     pass
 
         self.files.reverse()

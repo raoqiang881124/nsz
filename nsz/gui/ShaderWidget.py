@@ -1,5 +1,4 @@
 from kivy.clock import Clock
-from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.core.window import Window
 from kivy.graphics import RenderContext

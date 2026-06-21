@@ -5,7 +5,7 @@ from nsz.nut import Print
 from nsz.Fs.File import MemoryFile
 from nsz.Fs.Cnmt import Cnmt
 from nsz.Fs import Bktr
-from binascii import hexlify as hx, unhexlify as uhx
+from binascii import hexlify as hx
 
 
 class EncryptedSection:
@@ -44,12 +44,12 @@ class BaseFs(File):
             self.buffer = buffer
             try:
                 self.fsType = Type.Fs(buffer[0x3])
-            except:
+            except ValueError:
                 self.fsType = buffer[0x3]
 
             try:
                 self.cryptoType = Type.Crypto(buffer[0x4])
-            except:
+            except ValueError:
                 self.cryptoType = buffer[0x4]
 
             self.cryptoCounter = bytearray((b"\x00" * 8) + buffer[0x140:0x148])
@@ -147,7 +147,7 @@ class BaseFs(File):
         cryptoCounter=-1,
         meta_only=False,
     ):
-        r = super(BaseFs, self).open(
+        super(BaseFs, self).open(
             path, mode, cryptoType, cryptoKey, cryptoCounter, meta_only
         )
 

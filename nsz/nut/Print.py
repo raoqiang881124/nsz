@@ -3,7 +3,7 @@ import time
 import json
 from sys import argv
 from multiprocessing.process import current_process
-from nsz.ParseArguments import *
+from nsz.ParseArguments import ParseArguments
 from traceback import print_exc
 
 enableInfo = True
@@ -39,11 +39,11 @@ def info(s, pleaseNoPrint=None):
     if silent or not enableInfo:
         return
 
-    if pleaseNoPrint == None:
-        if machineReadableOutput == False:
+    if pleaseNoPrint is None:
+        if not machineReadableOutput:
             sys.stdout.write(s + "\n")
     else:
-        if machineReadableOutput == False:
+        if not machineReadableOutput:
             while pleaseNoPrint.value() > 0:
                 time.sleep(0.01)
             pleaseNoPrint.increment()
@@ -73,12 +73,12 @@ def warning(s):
 def debug(s):
     if silent or not enableDebug:
         return
-    if machineReadableOutput == False:
+    if not machineReadableOutput:
         sys.stdout.write(s + "\n")
 
 
 def exception():
-    if machineReadableOutput == False:
+    if not machineReadableOutput:
         print_exc()
 
 

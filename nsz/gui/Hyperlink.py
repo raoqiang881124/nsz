@@ -1,17 +1,11 @@
-from kivy.app import App
 from kivy.core.window import Window
 from kivy.clock import Clock
-from kivy.compat import string_types
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.stacklayout import StackLayout
 from kivy.properties import StringProperty
-from kivy.properties import ObjectProperty
 from kivy.uix.behaviors import ButtonBehavior
-from kivy.factory import Factory
 from kivy.lang import Builder
-from nsz.gui.GuiPath import *
+from nsz.gui.GuiPath import getGuiPath
 import webbrowser
 
 Builder.load_file(getGuiPath("layout/Hyperlink.kv"))
@@ -65,20 +59,20 @@ class HyperlinkLabel(ButtonBehavior, Label):
             )
 
     def on_mouse_pos(self, *args):
-        if not self._tooltip == None:
+        if self._tooltip is not None:
             self._tooltip.pos = args[1]
         if self.collide_point(*self.to_widget(*args[1])):
             if not self.url_mouseover:
                 self.url_mouseover = True
                 Window.set_system_cursor("hand")
                 self._update_text(*args)
-                if not self._tooltip == None:
+                if self._tooltip is not None:
                     Clock.schedule_once(self.display_tooltip, 0.5)
         elif self.url_mouseover:
             self.url_mouseover = False
             Window.set_system_cursor("arrow")
             self._update_text(*args)
-            if not self._tooltip == None:
+            if self._tooltip is not None:
                 Clock.unschedule(self.display_tooltip)
                 self.close_tooltip()
 
