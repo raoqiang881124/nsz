@@ -80,7 +80,7 @@
     <Compile Include="nsz\gui\ShaderWidget.py" />
     <Compile Include="nsz\Header.py" />
     <Compile Include="nsz\IndependentNczDecompressor.py" />
-    <Compile Include="nsz\NszDecompressor.py" />
+    <Compile Include="nsz\Decompressor.py" />
     <Compile Include="nsz\nut\aes128.py" />
     <Compile Include="nsz\nut\Hex.py" />
     <Compile Include="nsz\nut\Keys.py" />

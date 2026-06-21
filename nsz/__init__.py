@@ -11,7 +11,7 @@ from nsz.Fs import Nsp, Xci, factory
 from nsz.BlockCompressor import blockCompress
 from nsz.SolidCompressor import solidCompress
 from traceback import format_exc
-from nsz.NszDecompressor import verify, decompress, VerificationException
+from nsz.Decompressor import verify, decompress, VerificationException
 from multiprocessing import cpu_count, freeze_support, Process, Manager
 from nsz.FileExistingChecks import (
     CreateTargetDict,
