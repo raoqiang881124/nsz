@@ -75,4 +75,10 @@ RUN wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${WI
     && xvfb-run -a wine cmd /c where strip \
     && rm -f /tmp/win-llvm.exe
 
+# Run as a non-root user.
+RUN useradd -m -s /bin/bash vscode \
+    && chown -R vscode:vscode /opt/venv-linux /opt/wine
+
 WORKDIR /workspaces/nsz
+RUN chown vscode:vscode /workspaces/nsz
+USER vscode

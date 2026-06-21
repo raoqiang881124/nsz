@@ -87,6 +87,19 @@ def processContainer(
                 offsetFirstSection = sortedFs(nspf)[0].offset
                 newFileName = nspf._path[0:-1] + "z"
 
+                def reportProgress(written, total):
+                    Print.progress(
+                        "Progress",
+                        {
+                            "sourceSize": total,
+                            "processed": written,
+                            "read": nspf.tell(),
+                            "readSize": nspf.size,
+                            "step": "Compressing",
+                            "filePath": newFileName,
+                        },
+                    )
+
                 with writeContainer.add(newFileName, nspf.size, pleaseNoPrint) as f:
                     start = f.tell()
 
@@ -118,6 +131,7 @@ def processContainer(
                     decompressedBytes = UNCOMPRESSABLE_HEADER_SIZE
 
                     statusReport[id] = [0, 0, nspf.size, "Compressing"]
+                    reportProgress(0, nspf.size)
 
                     partitions = []
                     if offsetFirstSection - UNCOMPRESSABLE_HEADER_SIZE > 0:
@@ -148,6 +162,7 @@ def processContainer(
 
                     partNr = 0
                     statusReport[id] = [nspf.tell(), f.tell(), nspf.size, "Compressing"]
+                    reportProgress(f.tell(), nspf.size)
                     if threads > 1:
                         params = ZstdCompressionParameters.from_level(
                             compressionLevel,
@@ -181,23 +196,16 @@ def processContainer(
                             nspf.size,
                             "Compressing",
                         ]
-
-                        Print.progress(
-                            "LoadingIntoRAM",
-                            {
-                                "sourceSize": nspf.size,
-                                "processed": nspf.tell(),
-                                "step": "Compressing",
-                            },
-                        )
+                        reportProgress(f.tell(), nspf.size)
                         sys.stdout.flush()
                     partitions[partNr].close()
                     partitions[partNr] = None
 
                     compressor.flush(FLUSH_FRAME)
-                    statusReport[id] = [nspf.tell(), f.tell(), nspf.size, "Compressing"]
-
                     written = f.tell() - start
+                    statusReport[id] = [nspf.tell(), f.tell(), nspf.size, "Compressing"]
+                    reportProgress(written, written)
+
                     Print.info(
                         "Compressed {0}% {1} -> {2}  - {3}".format(
                             written * 100 / nspf.size,

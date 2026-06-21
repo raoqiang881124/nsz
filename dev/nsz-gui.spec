@@ -15,15 +15,31 @@ from kivy.tools.packaging.pyinstaller_hooks import (
 
 block_cipher = None
 
+# The GUI never uses Kivy's Camera or VideoPlayer widgets. PyInstaller imports
+# every hidden import during analysis, and importing kivy.uix.camera/video
+# pulls in kivy.core.camera/video, which probe for native providers (picamera,
+# gi, gstreamer) that aren't installed in the build environment. That probe
+# logs a CRITICAL "no camera provider found" error and WARNINGs about missing
+# gstreamer DLLs. Drop those factory modules and exclude their core/lib
+# packages outright so the probe never runs.
+unusedFactoryModules = {'kivy.uix.camera', 'kivy.uix.videoplayer'}
+kivyExcludedImports = [
+    'kivy.core.camera', 'kivy.uix.camera',
+    'kivy.core.video', 'kivy.uix.videoplayer', 'kivy.lib.gstplayer',
+]
+
 # Avoid importing Kivy window providers while evaluating the spec in headless
 # build environments. Use static hidden imports with Kivy's alternate hook.
-kivyHiddenImports = list(set(get_factory_modules() + kivy_modules + [
-    'kivy.core.window',
-    'kivy.core.window.window_sdl2',
-    'kivy.core.text.text_sdl2',
-    'kivy.core.image.img_sdl2',
-    'kivy.core.clipboard.clipboard_sdl2',
-]))
+kivyHiddenImports = list(set(
+    [m for m in get_factory_modules() if m not in unusedFactoryModules] +
+    kivy_modules + [
+        'kivy.core.window',
+        'kivy.core.window.window_sdl2',
+        'kivy.core.text.text_sdl2',
+        'kivy.core.image.img_sdl2',
+        'kivy.core.clipboard.clipboard_sdl2',
+    ]
+))
 
 # Kivy bundles SDL2/GLEW itself on Linux and macOS. On Windows those libraries
 # come from the separate kivy_deps.sdl2/kivy_deps.glew wheels and need to be
@@ -98,7 +114,7 @@ a = Analysis([os.path.join(SPECPATH, '..', 'nsz.py')],
              hiddenimports=extraHiddenImports + kivyHiddenImports,
              hookspath=kivy_hookspath(),
              runtime_hooks=kivy_runtime_hooks(),
-             excludes=[],
+             excludes=kivyExcludedImports,
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher,

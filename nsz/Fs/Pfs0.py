@@ -1,4 +1,3 @@
-import sys
 from nsz.Fs.File import BaseFile
 from hashlib import sha256
 from nsz import Fs
@@ -31,8 +30,6 @@ class Pfs0Stream(BaseFile):
 
     def write(self, value, size=None):
         super(Pfs0Stream, self).write(value, len(value))
-        Print.progress("BufferCompression", {"processed": self.tell()})
-        sys.stdout.flush()
         self.written = True
         pos = self.tell()
         if pos > self.actualSize:

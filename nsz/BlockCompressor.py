@@ -139,6 +139,20 @@ def blockCompressContainer(
                 assert nspf._path is not None
                 offsetFirstSection = sortedFs(nspf)[0].offset
                 newFileName = nspf._path[0:-1] + "z"
+
+                def reportProgress(written, total):
+                    Print.progress(
+                        "Progress",
+                        {
+                            "sourceSize": total,
+                            "processed": written,
+                            "read": decompressedBytes,
+                            "readSize": nspf.size,
+                            "step": "Compressing",
+                            "filePath": newFileName,
+                        },
+                    )
+
                 f = writeContainer.add(newFileName, nspf.size)
                 startPos = f.tell()
                 nspf.seek(0)
@@ -189,6 +203,7 @@ def blockCompressContainer(
                 f.write(header)
                 decompressedBytes = UNCOMPRESSABLE_HEADER_SIZE
                 compressedBytes = f.tell()
+                reportProgress(compressedBytes, nspf.size)
 
                 if not machineReadableOutput and not minimalOutput:
                     assert barManager is not None
@@ -300,15 +315,9 @@ def blockCompressContainer(
                             writtenBar.count = compressedBytes // 1048576
                             bar.refresh()
                             writtenBar.refresh()
+                        else:
+                            reportProgress(compressedBytes, nspf.size)
 
-                    Print.progress(
-                        "LoadingIntoRAM",
-                        {
-                            "sourceSize": nspf.size,
-                            "processed": nspf.tell(),
-                            "step": "Compressing",
-                        },
-                    )
                     sys.stdout.flush()
                 partitions[partNr].close()
                 partitions[partNr] = None
@@ -322,6 +331,8 @@ def blockCompressContainer(
                     writtenBar.count = writtenBar.total
                     bar.refresh()
                     writtenBar.refresh()
+                else:
+                    reportProgress(written, written)
 
                 f.seek(blocksHeaderFilePos + 24)
                 header = b""

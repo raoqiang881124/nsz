@@ -72,13 +72,6 @@ class ParseArguments:
             help="Fixes PFS0 padding to match the nxdumptool/no-intro standard. Incompatible with --verify so --quick-verify will be used instead.",
         )
         parser.add_argument(
-            "-p",
-            "--parseCnmt",
-            action="store_true",
-            default=False,
-            help="Extract TitleId/Version from Cnmt if this information cannot be obtained from the filename. Required for skipping/overwriting existing files and --rm-old-version to work properly if some not every file is named properly. Supported filenames: *TitleID*[vVersion]*",
-        )
-        parser.add_argument(
             "-P",
             "--alwaysParseCnmt",
             action="store_true",

@@ -35,8 +35,6 @@ def ExtractTitleIDAndVersion(gamePath, args=None):
             version = int(versionResult.group()[2:-1])
         if titleId != "" and version > -1 and version % 65536 == 0:
             return (titleId, version)
-        elif args is not None and not args.parseCnmt:
-            return None
     gamePath = Path(gamePath).resolve()
     if isXciXcz(gamePath):
         container = Xci.Xci()
@@ -85,19 +83,12 @@ def CreateTargetDict(targetFolder, args, extension, filesAtTarget=None, alreadyE
                 filesAtTarget[filePath.name.lower()] = filePath_str
                 extractedIdVersion = ExtractTitleIDAndVersion(filePath, args)
                 if extractedIdVersion is None:
-                    if args.parseCnmt or args.alwaysParseCnmt:
-                        Print.error(
-                            300,
-                            'Failed to extract TitleID/Version from both filename "{0}" and Cnmt - Outdated keys.txt?'.format(
-                                Path(filePath).name
-                            ),
-                        )
-                    else:
-                        Print.warning(
-                            'Failed to extract TitleID/Version from filename "{0}". Use -p to extract from Cnmt.'.format(
-                                Path(filePath).name
-                            )
-                        )
+                    Print.error(
+                        300,
+                        'Failed to extract TitleID/Version from both filename "{0}" and Cnmt - Outdated keys.txt?'.format(
+                            Path(filePath).name
+                        ),
+                    )
                     continue
                 titleID, version = extractedIdVersion
                 titleIDEntry = alreadyExists.get(titleID)
@@ -120,19 +111,12 @@ def AllowedToWriteOutfile(filePath, targetFileExtension, targetDict, args):
     (filesAtTarget, alreadyExists) = targetDict
     extractedIdVersion = ExtractTitleIDAndVersion(filePath, args)
     if extractedIdVersion is None:
-        if args.parseCnmt or args.alwaysParseCnmt:
-            Print.error(
-                300,
-                'Failed to extract TitleID/Version from both filename "{0}" and Cnmt - Outdated keys.txt?'.format(
-                    Path(filePath).name
-                ),
-            )
-        else:
-            Print.warning(
-                'Failed to extract TitleID/Version from filename "{0}". Use -p to extract from Cnmt.'.format(
-                    Path(filePath).name
-                )
-            )
+        Print.error(
+            300,
+            'Failed to extract TitleID/Version from both filename "{0}" and Cnmt - Outdated keys.txt?'.format(
+                Path(filePath).name
+            ),
+        )
         return fileNameCheck(
             filePath,
             targetFileExtension,

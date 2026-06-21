@@ -56,7 +56,7 @@ def error(errorCode, s):
     if silent or not enableError:
         return
     if machineReadableOutput:
-        s = json.dumps({"error": s, "errorCode": errorCode, "warning": False})
+        s = json.dumps({"type": "error", "code": errorCode, "message": s})
 
     sys.stdout.write(s + "\n")
 
@@ -65,7 +65,7 @@ def warning(s):
     if silent or not enableWarning:
         return
     if machineReadableOutput:
-        s = json.dumps({"error": False, "warning": s})
+        s = json.dumps({"type": "warning", "message": s})
 
     sys.stdout.write(s + "\n")
 
@@ -89,12 +89,30 @@ def progress(job, s):
     global spinnerIndex
 
     if machineReadableOutput:
-        s = json.dumps({"job": job, "data": s, "error": False, "warning": False})
+        data = s if isinstance(s, dict) else {}
+        if job == "Complete":
+            payload = {"type": "complete", "file": data.get("filePath", "")}
+        else:
+            payload = {"type": "progress", "step": data.get("step", job)}
+            if data.get("filePath"):
+                payload["file"] = data["filePath"]
+            total = data.get("sourceSize")
+            current = data.get("processed")
+            if total is not None:
+                payload["totalWrite"] = total
+            if current is not None:
+                payload["currentWrite"] = current
+            if total is not None and current is not None and total > 0:
+                payload["percent"] = round(current * 100 / total, 1)
+            if "readSize" in data:
+                payload["totalRead"] = data["readSize"]
+            if "read" in data:
+                payload["currentRead"] = data["read"]
 
-        if s != lastProgress:
-            sys.stdout.write(s + "\n")
-
-            lastProgress = s
+        line = json.dumps(payload)
+        if line != lastProgress:
+            sys.stdout.write(line + "\n")
+            lastProgress = line
         return
 
     if minimalOutput:
