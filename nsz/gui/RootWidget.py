@@ -102,7 +102,8 @@ class RootWidget(FloatLayout):
         self.dismissPopup()
 
     def setOutputFileFolder(self, path, filename):
-        self.output = path
+        selected_path = filename[0] if len(filename) > 0 else path
+        self.output = selected_path
         Print.info("Set --output to {0}".format(self.output))
         self.dismissPopup()
 
