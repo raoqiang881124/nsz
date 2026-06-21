@@ -126,6 +126,15 @@ def progress(job, s):
                 lastMinimalProgressLength = len(minimalLine)
                 lastMinimalProgress = minimalLine
             sys.stdout.flush()
+        return
+
+    if job == "Complete":
+        filePath = s.get("filePath", "") if isinstance(s, dict) else ""
+        if filePath:
+            sys.stdout.write("[DONE]       {0}\n".format(filePath))
+        else:
+            sys.stdout.write("[DONE]\n")
+        sys.stdout.flush()
 
 
 def isMinimalOutput():

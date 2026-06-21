@@ -7,15 +7,11 @@ from sys import argv
 from nsz.nut import Keys, Print
 from os import remove
 from time import sleep
-from nsz.Fs import Nsp, factory
+from nsz.Fs import Nsp, Xci, factory
 from nsz.BlockCompressor import blockCompress
 from nsz.SolidCompressor import solidCompress
 from traceback import format_exc
-from nsz.NszDecompressor import (
-    verify as NszVerify,
-    decompress as NszDecompress,
-    VerificationException,
-)
+from nsz.NszDecompressor import verify, decompress, VerificationException
 from multiprocessing import cpu_count, freeze_support, Process, Manager
 from nsz.FileExistingChecks import (
     CreateTargetDict,
@@ -38,6 +34,11 @@ from nsz.undupe import undupe
 import enlighten
 import sys
 import os
+import warnings
+
+warnings.filterwarnings(
+    "ignore", message="unknown terminal capability", module="blessed.*"
+)
 
 
 class VerificationFailed:
@@ -94,6 +95,7 @@ def solidCompressTask(
                 id,
                 pleaseNoPrint,
             )
+            assert outFile is not None
             if verifyArg:
                 Print.info("[VERIFY NSZ] {0}".format(outFile))
                 try:
@@ -136,6 +138,7 @@ def compress(filePath, outputDir, args, work, amountOfTastkQueued):
             outputDir,
             threadsToUseForBlockCompression,
         )
+        assert outFile is not None
         if args.verify:
             Print.info("[VERIFY NSZ] {0}".format(outFile))
             try:
@@ -167,30 +170,6 @@ def compress(filePath, outputDir, args, work, amountOfTastkQueued):
             ]
         )
         amountOfTastkQueued.increment()
-
-
-def decompress(filePath, outputDir, fixPadding, statusReportInfo=None):
-    NszDecompress(filePath, outputDir, fixPadding, statusReportInfo)
-
-
-def verify(
-    filePath,
-    fixPadding,
-    raiseVerificationException,
-    raisePfs0Exception,
-    originalFilePath=None,
-    statusReportInfo=None,
-    pleaseNoPrint=None,
-):
-    NszVerify(
-        filePath,
-        fixPadding,
-        raiseVerificationException,
-        raisePfs0Exception,
-        originalFilePath,
-        statusReportInfo,
-        pleaseNoPrint,
-    )
 
 
 err = []
@@ -272,6 +251,7 @@ def main():
         if minimalOutput:
             Print.enableInfo = False
 
+        argOutFolder = None
         if args.output:
             argOutFolderToPharse = args.output
             if not argOutFolderToPharse.endswith(
@@ -284,7 +264,7 @@ def main():
                     'Error: Output directory "{0}" does not exist!'.format(args.output),
                 )
                 return
-        argOutFolder = Path(argOutFolderToPharse).resolve() if args.output else None
+            argOutFolder = Path(argOutFolderToPharse).resolve()
 
         Print.info("")
         Print.info("             NSZ v4.6   ,;:;;,")
@@ -337,12 +317,15 @@ def main():
                     container = factory(filePath)
                     container.open(filePath_str, "rb")
                     if isXciXcz(filePath):
+                        assert isinstance(container, Xci.Xci)
+                        assert container.hfs0 is not None
                         for hfs0 in container.hfs0:
                             secureIn = hfs0
                             secureIn.unpack(
                                 outFolder.joinpath(hfs0._path), args.extractregex
                             )
                     else:
+                        assert isinstance(container, Nsp.Nsp)
                         container.unpack(outFolder, args.extractregex)
                     container.close()
 
@@ -351,7 +334,7 @@ def main():
 
         if args.create:
             Print.info('Creating "{0}"'.format(args.create))
-            nsp = Nsp.Nsp(None, None)
+            nsp = Nsp.Nsp()
             nsp.path = args.create
             nsp.pack(args.file, args.fix_padding)
 
@@ -432,16 +415,27 @@ def main():
             if not machineReadableOutput:
                 # Create the progress bar(s).
                 if not minimalOutput:
+                    assert barManager is not None
+                    totalBarLines = parallelTasks * 2
                     for i in range(parallelTasks):
                         bar = barManager.counter(
+                            position=totalBarLines - 2 * i,
                             total=100,
-                            desc="Compressing",
+                            desc="Read",
                             unit="MiB",
                             color="cyan",
                             bar_format=BAR_FMT,
                         )
-                        compressedSubBars.append(bar.add_subcounter("green"))
+                        compressedSubBar = barManager.counter(
+                            position=totalBarLines - 2 * i - 1,
+                            total=100,
+                            desc="Written",
+                            unit="MiB",
+                            color="green",
+                            bar_format=BAR_FMT,
+                        )
                         bars.append(bar)
+                        compressedSubBars.append(compressedSubBar)
 
             # Ensures that all threads are started and compleaded before being requested to quit
             while readyForWork.value() < parallelTasks:
@@ -478,12 +472,17 @@ def main():
                             compressedRead, compressedWritten, total, currentStep = (
                                 statusReport[i]
                             )
-                            if bars[i].total != total:
+                            if bars[i].total != total // 1048576:
                                 bars[i].total = total // 1048576
+                                compressedSubBars[i].total = total // 1048576
                             bars[i].count = compressedRead // 1048576
                             compressedSubBars[i].count = compressedWritten // 1048576
-                            bars[i].desc = currentStep
+                            bars[i].desc = "{0} Read   ".format(currentStep)
+                            compressedSubBars[i].desc = "{0} Written".format(
+                                currentStep
+                            )
                             bars[i].refresh()
+                            compressedSubBars[i].refresh()
 
                 pleaseNoPrint.decrement()
             pleaseKillYourself.increment()
@@ -497,13 +496,23 @@ def main():
                 if minimalOutput:
                     Print.progress("Complete", {"filePath": ""})
                 else:
+                    assert barManager is not None
                     for i in range(parallelTasks):
-                        bars[i].close(clear=True)
+                        _compressedRead, compressedWritten, _total, _currentStep = (
+                            statusReport[i]
+                        )
+                        bars[i].count = bars[i].total
+                        compressedSubBars[i].total = max(
+                            compressedWritten // 1048576, 1
+                        )
+                        compressedSubBars[i].count = compressedSubBars[i].total
+                        bars[i].refresh()
+                        compressedSubBars[i].refresh()
                     barManager.stop()
 
             for filePath in sourceFileToDelete:
                 if argOutFolder:
-                    delete_source_file(filePath, outFolder)
+                    delete_source_file(filePath, argOutFolder)
                 else:
                     delete_source_file(filePath, filePath.parent.absolute())
 
@@ -589,12 +598,9 @@ def main():
                         err.append({"filename": filePath, "error": format_exc()})
                         Print.exception()
 
-        if len(argv) == 1:
-            pass
     except KeyboardInterrupt:
         Print.info("Keyboard exception")
     except BaseException as e:
-        Print.info("enableInfo: {0}".format(str(Print.enableInfo)))
         Print.info("nut exception: {0}".format(str(e)))
         raise
     if err:
@@ -612,19 +618,13 @@ def main():
             else:
                 Print.info("\033[0mError while processing {0}".format(e["filename"]))
                 Print.info(e["error"])
+        exitCode = 1
+    else:
+        exitCode = 0
 
-        Print.info("\nDone!\n")
-        Print.info(" ")
-
-        if len(argv) <= 1:
-            input("Press Enter to exit...")
-        sys.exit(1)
-
-    Print.info("\nDone!\n")
     if len(argv) <= 1:
         input("Press Enter to exit...")
-    sys.exit(0)
-    # breakpoint()
+    sys.exit(exitCode)
 
 
 if __name__ == "__main__":

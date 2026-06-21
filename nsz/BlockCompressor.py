@@ -5,8 +5,7 @@ from traceback import format_exc
 from zstandard import ZstdCompressionParameters, ZstdCompressor
 from nsz.SectionFs import isNcaPacked, sortedFs
 from multiprocessing import Process, Manager
-from nsz.Fs import Pfs0, Hfs0, Nca, Type, Xci, factory
-from nsz.ParseArguments import ParseArguments
+from nsz.Fs import Pfs0, Hfs0, Nca, Nsp, Type, Xci
 import enlighten
 
 if hasattr(sys, "getandroidapilevel"):
@@ -87,16 +86,8 @@ def blockCompressContainer(
     CHUNK_SZ = 0x100000
     UNCOMPRESSABLE_HEADER_SIZE = 0x4000
 
-    machineReadableOutput = False
-    minimalOutput = False
-
-    args = ParseArguments.parse()
-
-    # Does the user want machine readable output?
-    if args.machine_readable:
-        machineReadableOutput = True
-    if args.minimal_output:
-        minimalOutput = True
+    machineReadableOutput = Print.machineReadableOutput
+    minimalOutput = Print.isMinimalOutput()
 
     if blockSizeExponent < 14 or blockSizeExponent > 32:
         raise ValueError("Block size must be between 14 and 32")
@@ -119,16 +110,25 @@ def blockCompressContainer(
         p.start()
         pool.append(p)
 
+    bar = None
+    writtenBar = None
+    barManager = None
+    BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
+    WRITTEN_DESC = "Compressing Written"
+    READ_DESC = "Compressing Read".ljust(len(WRITTEN_DESC))
+    if not machineReadableOutput and not minimalOutput:
+        barManager = enlighten.get_manager()
+
     for nspf in readContainer:
         if not keep:
-            if (
-                isinstance(nspf, Nca.Nca)
-                and nspf.header.contentType == Type.Content.DATA
-            ):
-                Print.info("[SKIPPED]    Delta fragment {0}".format(nspf._path))
-                continue
+            if isinstance(nspf, Nca.Nca) and nspf.header is not None:
+                if nspf.header.contentType == Type.Content.DATA:
+                    Print.info("[SKIPPED]    Delta fragment {0}".format(nspf._path))
+                    continue
         if (
             isinstance(nspf, Nca.Nca)
+            and nspf.header is not None
+            and nspf.size is not None
             and (
                 nspf.header.contentType == Type.Content.PROGRAM
                 or nspf.header.contentType == Type.Content.PUBLICDATA
@@ -136,6 +136,7 @@ def blockCompressContainer(
             and nspf.size > UNCOMPRESSABLE_HEADER_SIZE
         ):
             if isNcaPacked(nspf):
+                assert nspf._path is not None
                 offsetFirstSection = sortedFs(nspf)[0].offset
                 newFileName = nspf._path[0:-1] + "z"
                 f = writeContainer.add(newFileName, nspf.size)
@@ -190,15 +191,32 @@ def blockCompressContainer(
                 compressedBytes = f.tell()
 
                 if not machineReadableOutput and not minimalOutput:
-                    BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
-                    bar = enlighten.Counter(
-                        total=nspf.size // 1048576,
-                        desc="Compressing",
-                        unit="MiB",
-                        color="cyan",
-                        bar_format=BAR_FMT,
-                    )
-                    subBars = bar.add_subcounter("green", all_fields=True)
+                    assert barManager is not None
+                    if bar is None:
+                        bar = barManager.counter(
+                            position=2,
+                            total=nspf.size // 1048576,
+                            desc=READ_DESC,
+                            unit="MiB",
+                            color="cyan",
+                            bar_format=BAR_FMT,
+                        )
+                        writtenBar = barManager.counter(
+                            position=1,
+                            total=nspf.size // 1048576,
+                            desc=WRITTEN_DESC,
+                            unit="MiB",
+                            color="green",
+                            bar_format=BAR_FMT,
+                        )
+                    else:
+                        assert writtenBar is not None
+                        bar.total = nspf.size // 1048576
+                        writtenBar.total = nspf.size // 1048576
+                    bar.count = 0
+                    writtenBar.count = 0
+                    bar.refresh()
+                    writtenBar.refresh()
 
                 partitions = []
                 if offsetFirstSection - UNCOMPRESSABLE_HEADER_SIZE > 0:
@@ -229,9 +247,11 @@ def blockCompressContainer(
                 decompressedBytesOld = nspf.tell() // 1048576
 
                 if not machineReadableOutput and not minimalOutput:
+                    assert bar is not None and writtenBar is not None
                     bar.count = nspf.tell() // 1048576
-                    subBars.count = f.tell() // 1048576
+                    writtenBar.count = f.tell() // 1048576
                     bar.refresh()
+                    writtenBar.refresh()
 
                 while True:
                     buffer = partitions[partNr].read(blockSize)
@@ -275,9 +295,11 @@ def blockCompressContainer(
                         decompressedBytesOld = decompressedBytes
 
                         if not machineReadableOutput and not minimalOutput:
+                            assert bar is not None and writtenBar is not None
                             bar.count = decompressedBytes // 1048576
-                            subBars.count = compressedBytes // 1048576
+                            writtenBar.count = compressedBytes // 1048576
                             bar.refresh()
+                            writtenBar.refresh()
 
                     Print.progress(
                         "LoadingIntoRAM",
@@ -291,13 +313,16 @@ def blockCompressContainer(
                 partitions[partNr].close()
                 partitions[partNr] = None
                 endPos = f.tell()
+                written = endPos - startPos
 
                 if not machineReadableOutput and not minimalOutput:
-                    bar.count = decompressedBytes // 1048576
-                    subBars.count = compressedBytes // 1048576
-                    bar.close()
+                    assert bar is not None and writtenBar is not None
+                    bar.count = bar.total
+                    writtenBar.total = max(written // 1048576, 1)
+                    writtenBar.count = writtenBar.total
+                    bar.refresh()
+                    writtenBar.refresh()
 
-                written = endPos - startPos
                 f.seek(blocksHeaderFilePos + 24)
                 header = b""
 
@@ -337,6 +362,9 @@ def blockCompressContainer(
     while readyForWork.value() > 0:
         sleep(0.02)
 
+    if barManager is not None:
+        barManager.stop()
+
 
 def blockCompressNsp(
     filePath,
@@ -349,7 +377,7 @@ def blockCompressNsp(
     threads,
 ):
     filePath = filePath.resolve()
-    container = factory(filePath)
+    container = Nsp.Nsp()
     container.open(str(filePath), "rb")
     nszPath = outputDir.joinpath(filePath.stem + ".nsz")
 
@@ -378,7 +406,7 @@ def blockCompressNsp(
         Print.progress("Complete", {"filePath": str(nszPath)})
         sys.stdout.flush()
     except BaseException as ex:
-        if ex is not KeyboardInterrupt:
+        if not isinstance(ex, KeyboardInterrupt):
             Print.error(200, format_exc())
         if nszPath.is_file():
             nszPath.unlink()
@@ -402,7 +430,7 @@ def blockCompressXci(
     threads,
 ):
     filePath = filePath.resolve()
-    container = factory(filePath)
+    container = Xci.Xci()
     container.open(str(filePath), "rb")
     xczPath = outputDir.joinpath(filePath.stem + ".xcz")
 
@@ -412,7 +440,9 @@ def blockCompressXci(
 
     try:
         # need filepath to copy XCI container settings
+        assert container.hfs0 is not None
         with Xci.XciStream(str(xczPath), originalXciPath=filePath) as xci:
+            assert xci.hfs0 is not None
             for partitionIn in container.hfs0:
                 xci.hfs0.written = False
                 hfsPartitionOut = xci.hfs0.add(partitionIn._path, 0)
@@ -439,7 +469,7 @@ def blockCompressXci(
         Print.progress("Complete", {"filePath": str(xczPath)})
         sys.stdout.flush()
     except BaseException as ex:
-        if ex is not KeyboardInterrupt:
+        if not isinstance(ex, KeyboardInterrupt):
             Print.error(201, format_exc())
         if xczPath.is_file():
             xczPath.unlink()

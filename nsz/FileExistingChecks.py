@@ -1,4 +1,4 @@
-from nsz.Fs import Pfs0, Nca, Type, factory
+from nsz.Fs import Pfs0, Nca, Nsp, Type, Xci
 from os import remove
 from pathlib import Path
 from re import search
@@ -9,7 +9,11 @@ from nsz.PathTools import changeExtension, expandFiles, isGame, isXciXcz, target
 def ExtractHashes(container):
     fileHashes = set()
     for nspf in container:
-        if isinstance(nspf, Nca.Nca) and nspf.header.contentType == Type.Content.META:
+        if (
+            isinstance(nspf, Nca.Nca)
+            and nspf.header is not None
+            and nspf.header.contentType == Type.Content.META
+        ):
             for section in nspf:
                 if isinstance(section, Pfs0.Pfs0):
                     Cnmt = section.getCnmt()
@@ -34,19 +38,26 @@ def ExtractTitleIDAndVersion(gamePath, args=None):
         elif args is not None and not args.parseCnmt:
             return None
     gamePath = Path(gamePath).resolve()
-    container = factory(gamePath)
-    container.open(str(gamePath), "rb")
     if isXciXcz(gamePath):
-        container = container.hfs0["secure"]
+        container = Xci.Xci()
+        container.open(str(gamePath), "rb")
+        assert container.hfs0 is not None
+        iterContainer = container.hfs0["secure"]
+    else:
+        container = Nsp.Nsp()
+        container.open(str(gamePath), "rb")
+        iterContainer = container
     try:
-        for nspf in container:
+        for nspf in iterContainer:
             if (
                 isinstance(nspf, Nca.Nca)
+                and nspf.header is not None
                 and nspf.header.contentType == Type.Content.META
             ):
                 for section in nspf:
                     if isinstance(section, Pfs0.Pfs0):
                         Cnmt = section.getCnmt()
+                        assert Cnmt.titleId is not None and Cnmt.version is not None
                         titleId = Cnmt.titleId.upper()
                         version = Cnmt.version
     finally:
@@ -56,7 +67,11 @@ def ExtractTitleIDAndVersion(gamePath, args=None):
     return None
 
 
-def CreateTargetDict(targetFolder, args, extension, filesAtTarget={}, alreadyExists={}):
+def CreateTargetDict(targetFolder, args, extension, filesAtTarget=None, alreadyExists=None):
+    if filesAtTarget is None:
+        filesAtTarget = {}
+    if alreadyExists is None:
+        alreadyExists = {}
     for filePath in expandFiles(targetFolder):
         try:
             filePath_str = str(filePath)
@@ -131,7 +146,7 @@ def AllowedToWriteOutfile(filePath, targetFileExtension, targetDict, args):
     if titleIDEntry is not None:
         DuplicateEntriesToDelete = []
         OutdatedEntriesToDelete = []
-        exitFlag = False
+        newerVersionEntry = None
         for versionEntry in titleIDEntry.keys():
             if versionEntry == versionExtracted:
                 if args.overwrite:
@@ -144,12 +159,12 @@ def AllowedToWriteOutfile(filePath, targetFileExtension, targetDict, args):
                     OutdatedEntriesToDelete.append(versionEntry)
             else:  # versionEntry > versionExtracted
                 if args.rm_old_version:
-                    exitFlag = True
-        if exitFlag:
+                    newerVersionEntry = versionEntry
+        if newerVersionEntry is not None:
             Print.warning(
                 "{0} with a the same ID and newer version already exists in the output directory.\n"
                 "If you want to process it do not use --rm-old-version!".format(
-                    titleIDEntry[versionEntry]
+                    titleIDEntry[newerVersionEntry]
                 )
             )
             return False

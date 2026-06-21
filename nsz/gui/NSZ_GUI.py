@@ -260,6 +260,7 @@ class arguments:
         self.undupe_prioritylist = ""
         self.undupe_whitelist = ""
         self.undupe_old_versions = False
+        self.keys = None
 
 
 if __name__ == "__main__":

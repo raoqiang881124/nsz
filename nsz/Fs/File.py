@@ -53,7 +53,7 @@ class BaseFile:
         n=None,
         cryptoType=-1,
         cryptoKey=-1,
-        cryptoCounter=-1,
+        cryptoCounter: "int | bytes | bytearray" = -1,
         autoOpen=True,
         meta_only=False,
     ):

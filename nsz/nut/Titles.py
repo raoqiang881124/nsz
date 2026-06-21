@@ -44,7 +44,7 @@ def items(region=None, language=None):
     if region:
         return regionTitles[region][language].items()
 
-    return titles.items()
+    return data().items()
 
 
 def get(key, region=None, language=None):
@@ -58,16 +58,16 @@ def get(key, region=None, language=None):
 
 
 def contains(key, region=None):
-    return key in titles
+    return key in data(region)
 
 
 def erase(id):
     id = id.upper()
-    del titles[id]
+    del data()[id]
 
 
 def set(key, value):
-    titles[key] = value
+    data()[key] = value
 
 
 def keys(region=None, language=None):

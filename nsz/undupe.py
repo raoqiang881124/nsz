@@ -50,7 +50,7 @@ def undupe(args, argOutFolder):
                             Print.info("[DRYRUN] [DELETED] [BLACKLIST]: " + file)
 
             if not args.undupe_prioritylist == "":
-                for file in list(version_value.reverse()):
+                for file in list(reversed(version_value)):
                     if (
                         len(version_value) > 1
                         and not isOnWhitelist(args, file)

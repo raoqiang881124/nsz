@@ -1,7 +1,7 @@
 import sys
 from traceback import format_exc
 from nsz.SectionFs import isNcaPacked, sortedFs
-from nsz.Fs import factory, Pfs0, Hfs0, Nca, Type, Xci
+from nsz.Fs import Pfs0, Hfs0, Nca, Nsp, Type, Xci
 from nsz.nut import Print
 from zstandard import (
     FLUSH_FRAME,
@@ -65,16 +65,17 @@ def processContainer(
 ):
     for nspf in readContainer:
         if not keep:
-            if (
-                isinstance(nspf, Nca.Nca)
-                and nspf.header.contentType == Type.Content.DATA
-            ):
-                Print.info(
-                    "[SKIPPED]	Delta fragment {0}".format(nspf._path), pleaseNoPrint
-                )
-                continue
+            if isinstance(nspf, Nca.Nca) and nspf.header is not None:
+                if nspf.header.contentType == Type.Content.DATA:
+                    Print.info(
+                        "[SKIPPED]	Delta fragment {0}".format(nspf._path),
+                        pleaseNoPrint,
+                    )
+                    continue
         if (
             isinstance(nspf, Nca.Nca)
+            and nspf.header is not None
+            and nspf.size is not None
             and (
                 nspf.header.contentType == Type.Content.PROGRAM
                 or nspf.header.contentType == Type.Content.PUBLICDATA
@@ -82,6 +83,7 @@ def processContainer(
             and nspf.size > UNCOMPRESSABLE_HEADER_SIZE
         ):
             if isNcaPacked(nspf):
+                assert nspf._path is not None
                 offsetFirstSection = sortedFs(nspf)[0].offset
                 newFileName = nspf._path[0:-1] + "z"
 
@@ -230,7 +232,7 @@ def solidCompressNsp(
     pleaseNoPrint,
 ):
     filePath = filePath.resolve()
-    container = factory(filePath)
+    container = Nsp.Nsp()
     container.open(str(filePath), "rb")
     nszPath = outputDir.joinpath(filePath.stem + ".nsz")
 
@@ -262,7 +264,7 @@ def solidCompressNsp(
         Print.progress("Complete", {"filePath": str(nszPath)})
         sys.stdout.flush()
     except BaseException as ex:
-        if ex is not KeyboardInterrupt:
+        if not isinstance(ex, KeyboardInterrupt):
             Print.error(500, format_exc())
         if nszPath.is_file():
             nszPath.unlink()
@@ -288,7 +290,7 @@ def solidCompressXci(
     pleaseNoPrint,
 ):
     filePath = filePath.resolve()
-    container = factory(filePath)
+    container = Xci.Xci()
     container.open(str(filePath), "rb")
     xczPath = outputDir.joinpath(filePath.stem + ".xcz")
 
@@ -299,7 +301,9 @@ def solidCompressXci(
 
     try:
         # need filepath to copy XCI container settings
+        assert container.hfs0 is not None
         with Xci.XciStream(str(xczPath), originalXciPath=filePath) as xci:
+            assert xci.hfs0 is not None
             for partitionIn in container.hfs0:
                 xci.hfs0.written = False
                 hfsPartitionOut = xci.hfs0.add(partitionIn._path, 0, pleaseNoPrint)
@@ -328,7 +332,7 @@ def solidCompressXci(
         Print.progress("Complete", {"filePath": str(xczPath)})
         sys.stdout.flush()
     except BaseException as ex:
-        if ex is not KeyboardInterrupt:
+        if not isinstance(ex, KeyboardInterrupt):
             Print.error(501, format_exc())
         if xczPath.is_file():
             xczPath.unlink()

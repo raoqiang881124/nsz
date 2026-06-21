@@ -21,4 +21,8 @@ if __name__ == "__main__":
         path = pathlib.Path(__file__).resolve().parent.absolute()
         sys.path.append(str(path))
         import nsz
-    nsz.main()
+    try:
+        nsz.main()
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
