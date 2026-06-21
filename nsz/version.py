@@ -1,2 +1,2 @@
-VERSION = "4.6.2"
-GUI_VERSION = "4.6.2"
+VERSION = "4.6.3"
+GUI_VERSION = "4.6.3"
