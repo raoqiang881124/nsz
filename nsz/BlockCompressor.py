@@ -114,6 +114,7 @@ def blockCompressContainer(
     writtenBar = None
     barManager = None
     BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
+    WRITTEN_FMT = "{desc}{desc_pad}{count:.2j}B [{elapsed}, {rate:.2j}B/s]"
     WRITTEN_DESC = "Compressing Written"
     READ_DESC = "Compressing Read".ljust(len(WRITTEN_DESC))
     if not machineReadableOutput and not minimalOutput:
@@ -218,18 +219,15 @@ def blockCompressContainer(
                         )
                         writtenBar = barManager.counter(
                             position=1,
-                            total=nspf.size // 1048576,
                             desc=WRITTEN_DESC,
-                            unit="MiB",
                             color="green",
-                            bar_format=BAR_FMT,
+                            counter_format=WRITTEN_FMT,
                         )
                     else:
                         assert writtenBar is not None
                         bar.total = nspf.size // 1048576
-                        writtenBar.total = nspf.size // 1048576
                     bar.count = 0
-                    writtenBar.count = 0
+                    writtenBar.count = 0.0
                     bar.refresh()
                     writtenBar.refresh()
 
@@ -264,7 +262,7 @@ def blockCompressContainer(
                 if not machineReadableOutput and not minimalOutput:
                     assert bar is not None and writtenBar is not None
                     bar.count = nspf.tell() // 1048576
-                    writtenBar.count = f.tell() // 1048576
+                    writtenBar.count = float(f.tell())
                     bar.refresh()
                     writtenBar.refresh()
 
@@ -312,7 +310,7 @@ def blockCompressContainer(
                         if not machineReadableOutput and not minimalOutput:
                             assert bar is not None and writtenBar is not None
                             bar.count = decompressedBytes // 1048576
-                            writtenBar.count = compressedBytes // 1048576
+                            writtenBar.count = float(compressedBytes)
                             bar.refresh()
                             writtenBar.refresh()
                         else:
@@ -327,8 +325,7 @@ def blockCompressContainer(
                 if not machineReadableOutput and not minimalOutput:
                     assert bar is not None and writtenBar is not None
                     bar.count = bar.total
-                    writtenBar.total = max(written // 1048576, 1)
-                    writtenBar.count = writtenBar.total
+                    writtenBar.count = float(written)
                     bar.refresh()
                     writtenBar.refresh()
                 else:

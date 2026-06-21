@@ -389,6 +389,7 @@ def main():
             bars = []
             compressedSubBars = []
             BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
+            WRITTEN_FMT = "{desc}{desc_pad}{count:.2j}B [{elapsed}, {rate:.2j}B/s]"
             parallelTasks = min(args.multi, amountOfTastkQueued.value())
             if parallelTasks < 0:
                 parallelTasks = 4
@@ -428,11 +429,9 @@ def main():
                         )
                         compressedSubBar = barManager.counter(
                             position=totalBarLines - 2 * i - 1,
-                            total=100,
                             desc="Written",
-                            unit="MiB",
                             color="green",
-                            bar_format=BAR_FMT,
+                            counter_format=WRITTEN_FMT,
                         )
                         bars.append(bar)
                         compressedSubBars.append(compressedSubBar)
@@ -474,9 +473,8 @@ def main():
                             )
                             if bars[i].total != total // 1048576:
                                 bars[i].total = total // 1048576
-                                compressedSubBars[i].total = total // 1048576
                             bars[i].count = compressedRead // 1048576
-                            compressedSubBars[i].count = compressedWritten // 1048576
+                            compressedSubBars[i].count = float(compressedWritten)
                             bars[i].desc = "{0} Read   ".format(currentStep)
                             compressedSubBars[i].desc = "{0} Written".format(
                                 currentStep
@@ -502,10 +500,7 @@ def main():
                             statusReport[i]
                         )
                         bars[i].count = bars[i].total
-                        compressedSubBars[i].total = max(
-                            compressedWritten // 1048576, 1
-                        )
-                        compressedSubBars[i].count = compressedSubBars[i].total
+                        compressedSubBars[i].count = float(compressedWritten)
                         bars[i].refresh()
                         compressedSubBars[i].refresh()
                     barManager.stop()
