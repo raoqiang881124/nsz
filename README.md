@@ -40,6 +40,10 @@ For a compact terminal progress style use `--minimal-output` to print only `<per
 
 You can find the binaries in the [release](https://github.com/nicoboss/nsz/releases/) page.
 
+On most Linux systems you will need to right-click the file, open the properties, and choose to "Allow executing file as program".
+
+Mac systems are much more strict about which software is allowed to be ran on the system. You must make the file executable from the terminal with `chmod +x nsz-cli-macos` or `chmod +x nsz-gui-macos`. After trying to run the program you will be stopped by security. Go to System Settings > Privacy & Security then scroll down and choose to allow running the program.
+
 **The methods listed below require you to have [Python 3.6+](https://www.python.org/downloads) and pip3 installed.**
 
 ### PIP Package
