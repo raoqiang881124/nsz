@@ -8,8 +8,36 @@ from zstandard import (
     ZstdCompressionParameters,
     ZstdCompressor,
 )
+
 UNCOMPRESSABLE_HEADER_SIZE = 0x4000
 CHUNK_SZ = 0x1000000
+
+
+def _validateSectionCryptoData(section, sourcePath):
+    if not isinstance(section.cryptoKey, (bytes, bytearray)):
+        raise ValueError(
+            "NCA cannot be compressed: missing title key for {0} (invalid section key).".format(
+                sourcePath
+            )
+        )
+    if len(section.cryptoKey) != 0x10:
+        raise ValueError(
+            "NCA cannot be compressed: invalid section key length for {0}.".format(
+                sourcePath
+            )
+        )
+    if not isinstance(section.cryptoCounter, (bytes, bytearray)):
+        raise ValueError(
+            "NCA cannot be compressed: invalid section counter for {0}.".format(
+                sourcePath
+            )
+        )
+    if len(section.cryptoCounter) != 0x10:
+        raise ValueError(
+            "NCA cannot be compressed: invalid section counter length for {0}.".format(
+                sourcePath
+            )
+        )
 
 
 def solidCompress(
@@ -119,6 +147,7 @@ def processContainer(
                     i = 0
                     for fs in sections:
                         i += 1
+                        _validateSectionCryptoData(fs, nspf._path)
                         header += fs.offset.to_bytes(8, "little")
                         header += fs.size.to_bytes(8, "little")
                         header += fs.cryptoType.to_bytes(8, "little")

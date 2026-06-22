@@ -11,6 +11,10 @@ from nsz.nut import Titles
 MEDIA_SIZE = 0x200
 
 
+class MissingTitleKeyError(Exception):
+    pass
+
+
 class SectionTableEntry:
     def __init__(self, d):
         self.mediaOffset = int.from_bytes(d[0x0:0x4], byteorder="little", signed=False)
@@ -143,7 +147,12 @@ class NcaHeader(File):
                     uhx(Titles.get(titleRightsTitleId).key), self.masterKey
                 )
             else:
-                Print.info("could not find title key %s!" % titleRightsTitleId)
+                raise MissingTitleKeyError(
+                    "Missing title key for rights-managed NCA titleId={0} rightsId={1}. "
+                    "Add the title key and try again.".format(
+                        titleRightsTitleId, self.rightsId.decode().upper()
+                    )
+                )
         else:
             self.titleKeyDec = self.key()
 

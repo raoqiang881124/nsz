@@ -174,6 +174,30 @@ def blockCompressContainer(
 
                 for fs in sections:
                     i += 1
+                    if not isinstance(fs.cryptoKey, (bytes, bytearray)):
+                        raise ValueError(
+                            "NCA cannot be compressed: missing title key for {0} (invalid section key).".format(
+                                nspf._path
+                            )
+                        )
+                    if len(fs.cryptoKey) != 0x10:
+                        raise ValueError(
+                            "NCA cannot be compressed: invalid section key length for {0}.".format(
+                                nspf._path
+                            )
+                        )
+                    if not isinstance(fs.cryptoCounter, (bytes, bytearray)):
+                        raise ValueError(
+                            "NCA cannot be compressed: invalid section counter for {0}.".format(
+                                nspf._path
+                            )
+                        )
+                    if len(fs.cryptoCounter) != 0x10:
+                        raise ValueError(
+                            "NCA cannot be compressed: invalid section counter length for {0}.".format(
+                                nspf._path
+                            )
+                        )
                     header += fs.offset.to_bytes(8, "little")
                     header += fs.size.to_bytes(8, "little")
                     header += fs.cryptoType.to_bytes(8, "little")
