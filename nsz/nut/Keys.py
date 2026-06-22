@@ -20,6 +20,11 @@ loaded_keys_revisions = []
 incorrect_keys_revisions = []
 loaded_keys_checksum = None
 
+
+class MissingKeyError(IOError):
+    pass
+
+
 # This are NOT the keys but only a 4 bytes long checksum!
 # See https://en.wikipedia.org/wiki/Cyclic_redundancy_check
 # An infinite amount of inputs leads to the same CRC32 checksum
@@ -132,17 +137,11 @@ def unwrapAesWrappedTitlekey(wrappedKey, keyGeneration):
 
 def getKey(key):
     if key not in keys:
-        Print.error(
-            700,
-            "{0} missing from {1}! This will lead to corrupted output.".format(
-                key, loadedKeysFile
-            ),
+        errorMsg = "{0} missing from {1}! This will lead to corrupted output.".format(
+            key, loadedKeysFile
         )
-        raise IOError(
-            "{0} missing from {1}! This will lead to corrupted output.".format(
-                key, loadedKeysFile
-            )
-        )
+        Print.error(700, errorMsg)
+        raise MissingKeyError(errorMsg)
     foundKey = uhx(keys[key])
     foundKeyChecksum = crc32(foundKey)
     if key in crc32_checksum:

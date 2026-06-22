@@ -122,6 +122,8 @@ def solidCompressTask(
                     remove(outFile)
                     problemQueue.put(VerificationFailed(exception=e, in_file=filePath))
                     continue
+                except Keys.MissingKeyError:
+                    raise
                 except BaseException:
                     statusReport[id] = [0, 0, 1, "Failed"]
                     problemQueue.put(
@@ -133,12 +135,23 @@ def solidCompressTask(
                     continue
         except KeyboardInterrupt:
             Print.info("Keyboard exception")
+        except Keys.MissingKeyError as e:
+            statusReport[id] = [0, 0, 1, "Failed"]
+            problemQueue.put(
+                {
+                    "filename": locals().get("filePath", "<unknown>"),
+                    "error": str(e),
+                    "fatal": True,
+                }
+            )
+            pleaseKillYourself.increment()
+            break
         except BaseException as e:
             Print.info("nut exception: {0}".format(str(e)))
             statusReport[id] = [0, 0, 1, "Failed"]
             problemQueue.put(
                 {
-                    "filename": filePath if "filePath" in locals() else "<unknown>",
+                    "filename": locals().get("filePath", "<unknown>"),
                     "error": format_exc(),
                 }
             )
@@ -404,6 +417,8 @@ def main():
                             sourceFileToDelete.append(filePath)
                     except KeyboardInterrupt:
                         raise
+                    except Keys.MissingKeyError:
+                        raise
                     except BaseException:
                         Print.error(104, "Error while compressing file: %s" % filePath)
                         err.append({"filename": filePath, "error": format_exc()})
@@ -465,7 +480,14 @@ def main():
                 if pleaseNoPrint.value() > 0:
                     continue
                 if not problems.empty():
-                    err.append(problems.get())
+                    problem = problems.get()
+                    if (
+                        isinstance(problem, dict)
+                        and problem.get("fatal")
+                        and "error" in problem
+                    ):
+                        raise Keys.MissingKeyError(problem["error"])
+                    err.append(problem)
                 pleaseNoPrint.increment()
 
                 # Show the progress bar only if the output is human readable.
@@ -579,6 +601,8 @@ def main():
                             delete_source_file(filePath, outFolder)
                     except KeyboardInterrupt:
                         raise
+                    except Keys.MissingKeyError:
+                        raise
                     except BaseException:
                         Print.error(
                             105, "Error while decompressing file: {0}".format(filePath)
@@ -609,6 +633,8 @@ def main():
                             verify(filePath, args.fix_padding, True, True)
                     except KeyboardInterrupt:
                         raise
+                    except Keys.MissingKeyError:
+                        raise
                     except BaseException:
                         Print.error(
                             106, "Error while verifying file: {0}".format(filePath)
@@ -618,6 +644,8 @@ def main():
 
     except KeyboardInterrupt:
         Print.info("Keyboard exception")
+    except Keys.MissingKeyError:
+        sys.exit(1)
     except BaseException as e:
         Print.info("nut exception: {0}".format(str(e)))
         raise

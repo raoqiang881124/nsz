@@ -438,6 +438,8 @@ def blockCompressNsp(
         Print.progress("Complete", {"filePath": str(nszPath)})
         sys.stdout.flush()
     except BaseException as ex:
+        if isinstance(ex, Keys.MissingKeyError):
+            raise
         if not isinstance(ex, KeyboardInterrupt):
             Print.error(200, format_exc())
         if nszPath.is_file():
@@ -501,6 +503,8 @@ def blockCompressXci(
         Print.progress("Complete", {"filePath": str(xczPath)})
         sys.stdout.flush()
     except BaseException as ex:
+        if isinstance(ex, Keys.MissingKeyError):
+            raise
         if not isinstance(ex, KeyboardInterrupt):
             Print.error(201, format_exc())
         if xczPath.is_file():

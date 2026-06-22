@@ -2,7 +2,7 @@ import sys
 from traceback import format_exc
 from nsz.SectionFs import isNcaPacked, sortedFs
 from nsz.Fs import Pfs0, Hfs0, Nca, Nsp, Type, Xci
-from nsz.nut import Print
+from nsz.nut import Keys, Print
 from zstandard import (
     FLUSH_FRAME,
     ZstdCompressionParameters,
@@ -302,6 +302,8 @@ def solidCompressNsp(
         Print.progress("Complete", {"filePath": str(nszPath)})
         sys.stdout.flush()
     except BaseException as ex:
+        if isinstance(ex, Keys.MissingKeyError):
+            raise
         failed = True
         if not isinstance(ex, KeyboardInterrupt):
             Print.error(500, format_exc())
@@ -374,6 +376,8 @@ def solidCompressXci(
         Print.progress("Complete", {"filePath": str(xczPath)})
         sys.stdout.flush()
     except BaseException as ex:
+        if isinstance(ex, Keys.MissingKeyError):
+            raise
         failed = True
         if not isinstance(ex, KeyboardInterrupt):
             Print.error(501, format_exc())
