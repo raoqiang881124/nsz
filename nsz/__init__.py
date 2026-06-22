@@ -31,6 +31,7 @@ from nsz.PathTools import (
 )
 from nsz.ExtractTitlekeys import extractTitlekeys
 from nsz.undupe import undupe
+from nsz.version import VERSION
 import enlighten
 import sys
 import os
@@ -245,73 +246,463 @@ def configure_windows_gui_env():
     os.environ.setdefault("KIVY_GRAPHICS", "gles")
 
 
-def main():
-    global err
+def _get_args():
     global machineReadableOutput
     global minimalOutput
 
+    if len(argv) > 1:
+        # There are command line arguments so assume that the user wants to interact through the command line.
+        args = ParseArguments.parse()
+        if args.machine_readable:
+            machineReadableOutput = True
+        if args.minimal_output:
+            minimalOutput = True
+        return args
+
+    # There are no command line arguments. Open the GUI if it is available or print the help output.
     try:
-        if len(argv) > 1:
-            # There are command line arguments so assume that the user wants to interact through the command line.
-            args = ParseArguments.parse()
+        configure_windows_gui_env()
+        configure_linux_gui_env()
+        from nsz.gui.NSZ_GUI import launchGui
+    except ImportError:
+        ParseArguments.parse(args=["-h"])
+        return None
+    args = launchGui()
+    if args is None:
+        Print.info("Done!")
+        return None
+    return args
 
-            # Does the user want machine readable output?
-            if args.machine_readable:
-                machineReadableOutput = True
-            if args.minimal_output:
-                minimalOutput = True
-        else:
-            # There are no command line arguments. Open the GUI if it is available or print the help output.
-            try:
-                configure_windows_gui_env()
-                configure_linux_gui_env()
-                from nsz.gui.NSZ_GUI import launchGui
-            except ImportError:
-                ParseArguments.parse(args=["-h"])
-                return
-            args = launchGui()
-            if args is None:
-                Print.info("Done!")
-                return
 
-        if args.quick_verify:
-            args.verify = True
+def _validate_output_mode(args):
+    if args.quick_verify:
+        args.verify = True
 
-        if minimalOutput and machineReadableOutput:
-            Print.error(
-                107,
-                "Error: --minimal-output and --machine-readable cannot be used together.",
+    if minimalOutput and machineReadableOutput:
+        Print.error(
+            107,
+            "Error: --minimal-output and --machine-readable cannot be used together.",
+        )
+        return False
+
+    if minimalOutput:
+        Print.enableInfo = False
+    return True
+
+
+def _resolve_output_folder(args):
+    """Returns (outFolder, ok). outFolder is None when not specified; ok is False on error."""
+    if not args.output:
+        return None, True
+
+    argOutFolderToPharse = args.output
+    if not argOutFolderToPharse.endswith("/") and not argOutFolderToPharse.endswith(
+        "\\"
+    ):
+        argOutFolderToPharse += "/"
+    if not Path(argOutFolderToPharse).is_dir():
+        Print.error(
+            103,
+            'Error: Output directory "{0}" does not exist!'.format(args.output),
+        )
+        return None, False
+    return Path(argOutFolderToPharse).resolve(), True
+
+
+def _print_banner():
+    majorMinorVersion = ".".join(VERSION.split(".")[:2])
+    Print.info("")
+    Print.info("             NSZ v{0}   ,;:;;,".format(majorMinorVersion))
+    Print.info("                       ;;;;;")
+    Print.info("               .=',    ;:;;:,")
+    Print.info("              /_', \"=. ';:;:;")
+    Print.info("              @=:__,  \\,;:;:'")
+    Print.info("                _(\\.=  ;:;;'")
+    Print.info('               `"_(  _/="`')
+    Print.info("                `\"'")
+    Print.info("")
+
+
+def _handle_extract(args, argOutFolder):
+    for f_str in args.file:
+        for filePath in expandFiles(Path(f_str)):
+            filePath_str = str(filePath)
+            outFolder = (
+                argOutFolder.joinpath(filePath.stem)
+                if argOutFolder
+                else filePath.parent.absolute().joinpath(filePath.stem)
             )
+            Print.info('Extracting "{0}" to {1}'.format(filePath_str, outFolder))
+            container = factory(filePath)
+            container.open(filePath_str, "rb")
+            if isXciXcz(filePath):
+                assert isinstance(container, Xci.Xci)
+                assert container.hfs0 is not None
+                for hfs0 in container.hfs0:
+                    secureIn = hfs0
+                    secureIn.unpack(outFolder.joinpath(hfs0._path), args.extractregex)
+            else:
+                assert isinstance(container, Nsp.Nsp)
+                container.unpack(outFolder, args.extractregex)
+            container.close()
+
+
+def _handle_create(args):
+    Print.info('Creating "{0}"'.format(args.create))
+    nsp = Nsp.Nsp()
+    nsp.path = args.create
+    nsp.pack(args.file, args.fix_padding)
+
+
+def _adjust_compression_verify_flags(args):
+    if args.verify and not args.quick_verify and not args.keep:
+        Print.info(
+            "Warning: --verify requires --keep when used during compression or it will detect removed NDV0 fragments as errors. For compatibility reasons --quick-verify will be automatically used instead to match the command line argument behavior prior to NSZ v4.3.0."
+        )
+        args.quick_verify = True
+    if args.verify and not args.quick_verify and args.fix_padding:
+        Print.info(
+            "Warning: --verify and --fix-padding are incompatible with each others. For compatibility reasons --quick-verify will be automatically used instead to match the command line argument behavior prior to NSZ v4.6.0."
+        )
+        args.quick_verify = True
+
+
+def _queue_compression_jobs(
+    args, argOutFolder, work, amountOfTastkQueued, targetDictNsz, targetDictXcz
+):
+    """Queues compression jobs and returns the list of source files to delete afterwards."""
+    _adjust_compression_verify_flags(args)
+    sourceFileToDelete = []
+    for f_str in args.file:
+        for filePath in expandFiles(Path(f_str)):
+            if not isUncompressedGame(filePath):
+                continue
+            try:
+                outFolder = argOutFolder if argOutFolder else filePath.parent.absolute()
+                if filePath.suffix == ".nsp":
+                    if outFolder not in targetDictNsz:
+                        targetDictNsz[outFolder] = CreateTargetDict(
+                            outFolder, args, ".nsz"
+                        )
+                    if not AllowedToWriteOutfile(
+                        filePath, ".nsz", targetDictNsz[outFolder], args
+                    ):
+                        continue
+                elif filePath.suffix == ".xci":
+                    if outFolder not in targetDictXcz:
+                        targetDictXcz[outFolder] = CreateTargetDict(
+                            outFolder, args, ".xcz"
+                        )
+                    if not AllowedToWriteOutfile(
+                        filePath, ".xcz", targetDictXcz[outFolder], args
+                    ):
+                        continue
+                compress(filePath, outFolder, args, work, amountOfTastkQueued)
+                if args.rm_source:
+                    sourceFileToDelete.append(filePath)
+            except KeyboardInterrupt:
+                raise
+            except Keys.MissingKeyError:
+                raise
+            except BaseException:
+                Print.error(104, "Error while compressing file: %s" % filePath)
+                err.append({"filename": filePath, "error": format_exc()})
+                Print.exception()
+    return sourceFileToDelete
+
+
+def _start_compression_workers(
+    parallelTasks,
+    work,
+    statusReport,
+    readyForWork,
+    pleaseNoPrint,
+    pleaseKillYourself,
+    problems,
+    keysPath,
+):
+    for i in range(parallelTasks):
+        statusReport.append([0, 0, 100, "Compressing"])
+        p = Process(
+            target=solidCompressTask,
+            args=(
+                work,
+                statusReport,
+                readyForWork,
+                pleaseNoPrint,
+                pleaseKillYourself,
+                i,
+                problems,
+                keysPath,
+            ),
+        )
+        p.start()
+
+
+def _create_progress_bars(barManager, parallelTasks, BAR_FMT, WRITTEN_FMT):
+    bars = []
+    compressedSubBars = []
+    assert barManager is not None
+    totalBarLines = parallelTasks * 2
+    for i in range(parallelTasks):
+        bar = barManager.counter(
+            position=totalBarLines - 2 * i,
+            total=100,
+            desc="Read",
+            unit="MiB",
+            color="cyan",
+            bar_format=BAR_FMT,
+        )
+        compressedSubBar = barManager.counter(
+            position=totalBarLines - 2 * i - 1,
+            desc="Written",
+            color="green",
+            counter_format=WRITTEN_FMT,
+        )
+        bars.append(bar)
+        compressedSubBars.append(compressedSubBar)
+    return bars, compressedSubBars
+
+
+def _print_compression_progress(parallelTasks, statusReport, bars, compressedSubBars):
+    if minimalOutput:
+        totalRead = 0
+        totalSize = 0
+        currentStep = "Compressing"
+        for i in range(parallelTasks):
+            compressedRead, _compressedWritten, total, step = statusReport[i]
+            totalRead += compressedRead
+            totalSize += total
+            currentStep = step
+        Print.progress(
+            "Progress",
+            {
+                "sourceSize": totalSize,
+                "processed": totalRead,
+                "step": currentStep,
+            },
+        )
+        return
+
+    for i in range(parallelTasks):
+        compressedRead, compressedWritten, total, currentStep = statusReport[i]
+        if bars[i].total != total // 1048576:
+            bars[i].total = total // 1048576
+        bars[i].count = compressedRead // 1048576
+        compressedSubBars[i].count = float(compressedWritten)
+        bars[i].desc = "{0} Read   ".format(currentStep)
+        compressedSubBars[i].desc = "{0} Written".format(currentStep)
+        bars[i].refresh()
+        compressedSubBars[i].refresh()
+
+
+def _finish_compression_progress(
+    parallelTasks, statusReport, bars, compressedSubBars, barManager
+):
+    if machineReadableOutput:
+        return
+    if minimalOutput:
+        Print.progress("Complete", {"filePath": ""})
+        return
+    assert barManager is not None
+    for i in range(parallelTasks):
+        _compressedRead, compressedWritten, _total, _currentStep = statusReport[i]
+        bars[i].count = bars[i].total
+        compressedSubBars[i].count = float(compressedWritten)
+        bars[i].refresh()
+        compressedSubBars[i].refresh()
+    barManager.stop()
+
+
+def _run_compression(
+    args,
+    work,
+    statusReport,
+    readyForWork,
+    pleaseNoPrint,
+    pleaseKillYourself,
+    problems,
+    amountOfTastkQueued,
+    barManager,
+):
+    BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
+    WRITTEN_FMT = "{desc}{desc_pad}{count:.2j}B [{elapsed}, {rate:.2j}B/s]"
+    parallelTasks = min(args.multi, amountOfTastkQueued.value())
+    if parallelTasks < 0:
+        parallelTasks = 4
+
+    # Start the compression tasks in parallel.
+    _start_compression_workers(
+        parallelTasks,
+        work,
+        statusReport,
+        readyForWork,
+        pleaseNoPrint,
+        pleaseKillYourself,
+        problems,
+        args.keys,
+    )
+
+    bars, compressedSubBars = [], []
+    if not machineReadableOutput and not minimalOutput:
+        bars, compressedSubBars = _create_progress_bars(
+            barManager, parallelTasks, BAR_FMT, WRITTEN_FMT
+        )
+
+    # Ensures that all threads are started and compleaded before being requested to quit
+    while readyForWork.value() < parallelTasks:
+        sleep(0.2)
+        if pleaseNoPrint.value() > 0:
+            continue
+        if not problems.empty():
+            problem = problems.get()
+            if (
+                isinstance(problem, dict)
+                and problem.get("fatal")
+                and "error" in problem
+            ):
+                raise Keys.MissingKeyError(problem["error"])
+            err.append(problem)
+        pleaseNoPrint.increment()
+
+        # Show the progress bar only if the output is human readable.
+        if not machineReadableOutput:
+            _print_compression_progress(
+                parallelTasks, statusReport, bars, compressedSubBars
+            )
+
+        pleaseNoPrint.decrement()
+    pleaseKillYourself.increment()
+    for i in range(readyForWork.value()):
+        work.put(None)
+
+    while readyForWork.value() > 0:
+        sleep(0.02)
+
+    _finish_compression_progress(
+        parallelTasks, statusReport, bars, compressedSubBars, barManager
+    )
+
+
+def _delete_source_files(sourceFileToDelete, argOutFolder):
+    for filePath in sourceFileToDelete:
+        if argOutFolder:
+            delete_source_file(filePath, argOutFolder)
+        else:
+            delete_source_file(filePath, filePath.parent.absolute())
+
+
+def _handle_decompress(args, argOutFolder, targetDictNsz, targetDictXcz):
+    for f_str in args.file:
+        for filePath in expandFiles(Path(f_str)):
+            if not isCompressedGame(filePath) and not isCompressedGameFile(filePath):
+                continue
+            try:
+                outFolder = argOutFolder if argOutFolder else filePath.parent.absolute()
+                if filePath.suffix == ".nsz":
+                    if outFolder not in targetDictNsz:
+                        targetDictNsz[outFolder] = CreateTargetDict(
+                            outFolder, args, ".nsp"
+                        )
+                    if not AllowedToWriteOutfile(
+                        filePath, ".nsp", targetDictNsz[outFolder], args
+                    ):
+                        continue
+                elif filePath.suffix == ".xcz":
+                    if outFolder not in targetDictXcz:
+                        targetDictXcz[outFolder] = CreateTargetDict(
+                            outFolder, args, ".xci"
+                        )
+                    if not AllowedToWriteOutfile(
+                        filePath, ".xci", targetDictXcz[outFolder], args
+                    ):
+                        continue
+                elif filePath.suffix == ".ncz":
+                    outFile = Path(
+                        changeExtension(outFolder.joinpath(filePath.name), ".nca")
+                    )
+                    if not args.overwrite and outFile.is_file():
+                        Print.warning(
+                            "A file with the same output name already exists."
+                        )
+                        continue
+                decompress(filePath, outFolder, args.fix_padding)
+                if args.rm_source:
+                    delete_source_file(filePath, outFolder)
+            except KeyboardInterrupt:
+                raise
+            except Keys.MissingKeyError:
+                raise
+            except BaseException:
+                Print.error(105, "Error while decompressing file: {0}".format(filePath))
+                err.append({"filename": filePath, "error": format_exc()})
+                Print.exception()
+
+
+def _handle_info(args):
+    for f_str in args.file:
+        for filePath in expandFiles(Path(f_str)):
+            filePath_str = str(filePath)
+            Print.info(filePath_str)
+            f = factory(filePath)
+            f.open(filePath_str, "rb")
+            f.printInfo(args.depth + 1)
+            f.close()
+
+
+def _handle_verify(args):
+    for f_str in args.file:
+        for filePath in expandFiles(Path(f_str)):
+            try:
+                if isGame(filePath):
+                    Print.info(
+                        "[VERIFY {0}] {1}".format(
+                            getExtensionName(filePath), filePath.name
+                        )
+                    )
+                    verify(filePath, args.fix_padding, True, True)
+            except KeyboardInterrupt:
+                raise
+            except Keys.MissingKeyError:
+                raise
+            except BaseException:
+                Print.error(106, "Error while verifying file: {0}".format(filePath))
+                err.append({"filename": filePath, "error": format_exc()})
+                Print.exception()
+
+
+def _report_errors():
+    if not err:
+        return 0
+    Print.info(
+        "\n\033[93m\033[1mSummary of errors which occurred while processing files:"
+    )
+    for e in err:
+        if isinstance(e, VerificationFailed):
+            Print.info(
+                "\033[0mError while processing {0}: {1}".format(e.in_file, e.exception)
+            )
+        else:
+            Print.info("\033[0mError while processing {0}".format(e["filename"]))
+            Print.info(e["error"])
+    return 1
+
+
+def main():
+    global err
+
+    try:
+        args = _get_args()
+        if args is None:
+            return
+        if not _validate_output_mode(args):
             return
 
-        if minimalOutput:
-            Print.enableInfo = False
+        argOutFolder, ok = _resolve_output_folder(args)
+        if not ok:
+            return
 
-        argOutFolder = None
-        if args.output:
-            argOutFolderToPharse = args.output
-            if not argOutFolderToPharse.endswith(
-                "/"
-            ) and not argOutFolderToPharse.endswith("\\"):
-                argOutFolderToPharse += "/"
-            if not Path(argOutFolderToPharse).is_dir():
-                Print.error(
-                    103,
-                    'Error: Output directory "{0}" does not exist!'.format(args.output),
-                )
-                return
-            argOutFolder = Path(argOutFolderToPharse).resolve()
-
-        Print.info("")
-        Print.info("             NSZ v4.6   ,;:;;,")
-        Print.info("                       ;;;;;")
-        Print.info("               .=',    ;:;;:,")
-        Print.info("              /_', \"=. ';:;:;")
-        Print.info("              @=:__,  \\,;:;:'")
-        Print.info("                _(\\.=  ;:;;'")
-        Print.info('               `"_(  _/="`')
-        Print.info("                `\"'")
-        Print.info("")
+        _print_banner()
 
         barManager = (
             None
@@ -323,7 +714,6 @@ def main():
         readyForWork = Counter(poolManager, 0)
         pleaseNoPrint = Counter(poolManager, 0)
         pleaseKillYourself = Counter(poolManager, 0)
-        pool = []
         work = poolManager.Queue()
         problems = poolManager.Queue()
         amountOfTastkQueued = Counter(poolManager, 0)
@@ -339,334 +729,56 @@ def main():
             extractTitlekeys(args.file)
 
         if args.extract:
-            for f_str in args.file:
-                for filePath in expandFiles(Path(f_str)):
-                    filePath_str = str(filePath)
-                    outFolder = (
-                        argOutFolder.joinpath(filePath.stem)
-                        if argOutFolder
-                        else filePath.parent.absolute().joinpath(filePath.stem)
-                    )
-                    Print.info(
-                        'Extracting "{0}" to {1}'.format(filePath_str, outFolder)
-                    )
-                    container = factory(filePath)
-                    container.open(filePath_str, "rb")
-                    if isXciXcz(filePath):
-                        assert isinstance(container, Xci.Xci)
-                        assert container.hfs0 is not None
-                        for hfs0 in container.hfs0:
-                            secureIn = hfs0
-                            secureIn.unpack(
-                                outFolder.joinpath(hfs0._path), args.extractregex
-                            )
-                    else:
-                        assert isinstance(container, Nsp.Nsp)
-                        container.unpack(outFolder, args.extractregex)
-                    container.close()
+            _handle_extract(args, argOutFolder)
 
         if args.undupe or args.undupe_dryrun:
             undupe(args, argOutFolder)
 
         if args.create:
-            Print.info('Creating "{0}"'.format(args.create))
-            nsp = Nsp.Nsp()
-            nsp.path = args.create
-            nsp.pack(args.file, args.fix_padding)
+            _handle_create(args)
 
         if args.C:
-            if args.verify and not args.quick_verify and not args.keep:
-                Print.info(
-                    "Warning: --verify requires --keep when used during compression or it will detect removed NDV0 fragments as errors. For compatibility reasons --quick-verify will be automatically used instead to match the command line argument behavior prior to NSZ v4.3.0."
-                )
-                args.quick_verify = True
-            if args.verify and not args.quick_verify and args.fix_padding:
-                Print.info(
-                    "Warning: --verify and --fix-padding are incompatible with each others. For compatibility reasons --quick-verify will be automatically used instead to match the command line argument behavior prior to NSZ v4.6.0."
-                )
-                args.quick_verify = True
-            sourceFileToDelete = []
-            for f_str in args.file:
-                for filePath in expandFiles(Path(f_str)):
-                    if not isUncompressedGame(filePath):
-                        continue
-                    try:
-                        outFolder = (
-                            argOutFolder if argOutFolder else filePath.parent.absolute()
-                        )
-                        if filePath.suffix == ".nsp":
-                            if outFolder not in targetDictNsz:
-                                targetDictNsz[outFolder] = CreateTargetDict(
-                                    outFolder, args, ".nsz"
-                                )
-                            if not AllowedToWriteOutfile(
-                                filePath, ".nsz", targetDictNsz[outFolder], args
-                            ):
-                                continue
-                        elif filePath.suffix == ".xci":
-                            if outFolder not in targetDictXcz:
-                                targetDictXcz[outFolder] = CreateTargetDict(
-                                    outFolder, args, ".xcz"
-                                )
-                            if not AllowedToWriteOutfile(
-                                filePath, ".xcz", targetDictXcz[outFolder], args
-                            ):
-                                continue
-                        compress(filePath, outFolder, args, work, amountOfTastkQueued)
-                        if args.rm_source:
-                            sourceFileToDelete.append(filePath)
-                    except KeyboardInterrupt:
-                        raise
-                    except Keys.MissingKeyError:
-                        raise
-                    except BaseException:
-                        Print.error(104, "Error while compressing file: %s" % filePath)
-                        err.append({"filename": filePath, "error": format_exc()})
-                        Print.exception()
-
-            bars = []
-            compressedSubBars = []
-            BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
-            WRITTEN_FMT = "{desc}{desc_pad}{count:.2j}B [{elapsed}, {rate:.2j}B/s]"
-            parallelTasks = min(args.multi, amountOfTastkQueued.value())
-            if parallelTasks < 0:
-                parallelTasks = 4
-
-            # Start the compression tasks in parallel.
-            for i in range(parallelTasks):
-                statusReport.append([0, 0, 100, "Compressing"])
-                p = Process(
-                    target=solidCompressTask,
-                    args=(
-                        work,
-                        statusReport,
-                        readyForWork,
-                        pleaseNoPrint,
-                        pleaseKillYourself,
-                        i,
-                        problems,
-                        args.keys,
-                    ),
-                )
-                p.start()
-                pool.append(p)
-
-            if not machineReadableOutput:
-                # Create the progress bar(s).
-                if not minimalOutput:
-                    assert barManager is not None
-                    totalBarLines = parallelTasks * 2
-                    for i in range(parallelTasks):
-                        bar = barManager.counter(
-                            position=totalBarLines - 2 * i,
-                            total=100,
-                            desc="Read",
-                            unit="MiB",
-                            color="cyan",
-                            bar_format=BAR_FMT,
-                        )
-                        compressedSubBar = barManager.counter(
-                            position=totalBarLines - 2 * i - 1,
-                            desc="Written",
-                            color="green",
-                            counter_format=WRITTEN_FMT,
-                        )
-                        bars.append(bar)
-                        compressedSubBars.append(compressedSubBar)
-
-            # Ensures that all threads are started and compleaded before being requested to quit
-            while readyForWork.value() < parallelTasks:
-                sleep(0.2)
-                if pleaseNoPrint.value() > 0:
-                    continue
-                if not problems.empty():
-                    problem = problems.get()
-                    if (
-                        isinstance(problem, dict)
-                        and problem.get("fatal")
-                        and "error" in problem
-                    ):
-                        raise Keys.MissingKeyError(problem["error"])
-                    err.append(problem)
-                pleaseNoPrint.increment()
-
-                # Show the progress bar only if the output is human readable.
-                if not machineReadableOutput:
-                    if minimalOutput:
-                        totalRead = 0
-                        totalSize = 0
-                        currentStep = "Compressing"
-                        for i in range(parallelTasks):
-                            compressedRead, _compressedWritten, total, step = (
-                                statusReport[i]
-                            )
-                            totalRead += compressedRead
-                            totalSize += total
-                            currentStep = step
-                        Print.progress(
-                            "Progress",
-                            {
-                                "sourceSize": totalSize,
-                                "processed": totalRead,
-                                "step": currentStep,
-                            },
-                        )
-                    else:
-                        for i in range(parallelTasks):
-                            compressedRead, compressedWritten, total, currentStep = (
-                                statusReport[i]
-                            )
-                            if bars[i].total != total // 1048576:
-                                bars[i].total = total // 1048576
-                            bars[i].count = compressedRead // 1048576
-                            compressedSubBars[i].count = float(compressedWritten)
-                            bars[i].desc = "{0} Read   ".format(currentStep)
-                            compressedSubBars[i].desc = "{0} Written".format(
-                                currentStep
-                            )
-                            bars[i].refresh()
-                            compressedSubBars[i].refresh()
-
-                pleaseNoPrint.decrement()
-            pleaseKillYourself.increment()
-            for i in range(readyForWork.value()):
-                work.put(None)
-
-            while readyForWork.value() > 0:
-                sleep(0.02)
-
-            if not machineReadableOutput:
-                if minimalOutput:
-                    Print.progress("Complete", {"filePath": ""})
-                else:
-                    assert barManager is not None
-                    for i in range(parallelTasks):
-                        _compressedRead, compressedWritten, _total, _currentStep = (
-                            statusReport[i]
-                        )
-                        bars[i].count = bars[i].total
-                        compressedSubBars[i].count = float(compressedWritten)
-                        bars[i].refresh()
-                        compressedSubBars[i].refresh()
-                    barManager.stop()
-
-            for filePath in sourceFileToDelete:
-                if argOutFolder:
-                    delete_source_file(filePath, argOutFolder)
-                else:
-                    delete_source_file(filePath, filePath.parent.absolute())
+            sourceFileToDelete = _queue_compression_jobs(
+                args,
+                argOutFolder,
+                work,
+                amountOfTastkQueued,
+                targetDictNsz,
+                targetDictXcz,
+            )
+            _run_compression(
+                args,
+                work,
+                statusReport,
+                readyForWork,
+                pleaseNoPrint,
+                pleaseKillYourself,
+                problems,
+                amountOfTastkQueued,
+                barManager,
+            )
+            _delete_source_files(sourceFileToDelete, argOutFolder)
 
         if args.D:
-            for f_str in args.file:
-                for filePath in expandFiles(Path(f_str)):
-                    if not isCompressedGame(filePath) and not isCompressedGameFile(
-                        filePath
-                    ):
-                        continue
-                    try:
-                        outFolder = (
-                            argOutFolder if argOutFolder else filePath.parent.absolute()
-                        )
-                        if filePath.suffix == ".nsz":
-                            if outFolder not in targetDictNsz:
-                                targetDictNsz[outFolder] = CreateTargetDict(
-                                    outFolder, args, ".nsp"
-                                )
-                            if not AllowedToWriteOutfile(
-                                filePath, ".nsp", targetDictNsz[outFolder], args
-                            ):
-                                continue
-                        elif filePath.suffix == ".xcz":
-                            if outFolder not in targetDictXcz:
-                                targetDictXcz[outFolder] = CreateTargetDict(
-                                    outFolder, args, ".xci"
-                                )
-                            if not AllowedToWriteOutfile(
-                                filePath, ".xci", targetDictXcz[outFolder], args
-                            ):
-                                continue
-                        elif filePath.suffix == ".ncz":
-                            outFile = Path(
-                                changeExtension(
-                                    outFolder.joinpath(filePath.name), ".nca"
-                                )
-                            )
-                            if not args.overwrite and outFile.is_file():
-                                Print.warning(
-                                    "A file with the same output name already exists."
-                                )
-                                continue
-                        decompress(filePath, outFolder, args.fix_padding)
-                        if args.rm_source:
-                            delete_source_file(filePath, outFolder)
-                    except KeyboardInterrupt:
-                        raise
-                    except Keys.MissingKeyError:
-                        raise
-                    except BaseException:
-                        Print.error(
-                            105, "Error while decompressing file: {0}".format(filePath)
-                        )
-                        err.append({"filename": filePath, "error": format_exc()})
-                        Print.exception()
+            _handle_decompress(args, argOutFolder, targetDictNsz, targetDictXcz)
 
         if args.info:
-            for f_str in args.file:
-                for filePath in expandFiles(Path(f_str)):
-                    filePath_str = str(filePath)
-                    Print.info(filePath_str)
-                    f = factory(filePath)
-                    f.open(filePath_str, "rb")
-                    f.printInfo(args.depth + 1)
-                    f.close()
+            _handle_info(args)
 
         if args.verify and not args.C and not args.D:
-            for f_str in args.file:
-                for filePath in expandFiles(Path(f_str)):
-                    try:
-                        if isGame(filePath):
-                            Print.info(
-                                "[VERIFY {0}] {1}".format(
-                                    getExtensionName(filePath), filePath.name
-                                )
-                            )
-                            verify(filePath, args.fix_padding, True, True)
-                    except KeyboardInterrupt:
-                        raise
-                    except Keys.MissingKeyError:
-                        raise
-                    except BaseException:
-                        Print.error(
-                            106, "Error while verifying file: {0}".format(filePath)
-                        )
-                        err.append({"filename": filePath, "error": format_exc()})
-                        Print.exception()
+            _handle_verify(args)
 
+    except SystemExit:
+        raise
     except KeyboardInterrupt:
         Print.info("Keyboard exception")
     except Keys.MissingKeyError:
         sys.exit(1)
     except BaseException as e:
-        Print.info("nut exception: {0}".format(str(e)))
+        Print.info("nut exception {0}".format(str(e)))
         raise
-    if err:
-        Print.info(
-            "\n\033[93m\033[1mSummary of errors which occurred while processing files:"
-        )
 
-        for e in err:
-            if isinstance(e, VerificationFailed):
-                Print.info(
-                    "\033[0mError while processing {0}: {1}".format(
-                        e.in_file, e.exception
-                    )
-                )
-            else:
-                Print.info("\033[0mError while processing {0}".format(e["filename"]))
-                Print.info(e["error"])
-        exitCode = 1
-    else:
-        exitCode = 0
+    exitCode = _report_errors()
 
     if len(argv) <= 1:
         input("Press Enter to exit...")
