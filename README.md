@@ -239,7 +239,7 @@ options:
 
 To view all possible flags and their descriptions check the [Usage](https://github.com/nicoboss/nsz#usage) section.
 
-Automated bulk file operation examples are in [automation script files](https://github.com/nicoboss/nsz/tree/master/Automation%20Scripts).
+Automated bulk file operation examples are in [scripts](https://github.com/nicoboss/nsz/tree/master/scripts).
 
 ## File Format Details
 

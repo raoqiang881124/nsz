@@ -5,7 +5,7 @@ REM nsz.exe file path.
 SET "nszFilePath=%~dp0nsz.exe"
 
 REM Source directory path where to search for NSZ/XCZ files.
-SET "SrcDirectoryPath=C:\Nintendo Switch dumps"
+SET "SrcDirectoryPath=C:\dumps"
 
 REM Destination directory path where to save decompressed NSP/XCI files.
 SET "DstDirectoryPath=%SrcDirectoryPath%"
