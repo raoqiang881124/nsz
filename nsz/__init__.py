@@ -106,7 +106,7 @@ def solidCompressTask(
                 )
                 continue
             if verifyArg:
-                Print.info("[VERIFY NSZ] {0}".format(outFile))
+                Print.info("{0}".format(outFile), "VERIFY NSZ")
                 try:
                     verify(
                         outFile,
@@ -177,7 +177,7 @@ def compress(filePath, outputDir, args, work, amountOfTastkQueued):
         )
         assert outFile is not None
         if args.verify:
-            Print.info("[VERIFY NSZ] {0}".format(outFile))
+            Print.info("{0}".format(outFile), "VERIFY NSZ")
             try:
                 verify(
                     outFile,
@@ -311,16 +311,16 @@ def _resolve_output_folder(args):
 
 def _print_banner():
     majorMinorVersion = ".".join(VERSION.split(".")[:2])
-    Print.info("")
-    Print.info("             NSZ v{0}   ,;:;;,".format(majorMinorVersion))
-    Print.info("                       ;;;;;")
-    Print.info("               .=',    ;:;;:,")
-    Print.info("              /_', \"=. ';:;:;")
-    Print.info("              @=:__,  \\,;:;:'")
-    Print.info("                _(\\.=  ;:;;'")
-    Print.info('               `"_(  _/="`')
-    Print.info("                `\"'")
-    Print.info("")
+    Print.silly("")
+    Print.silly("             NSZ v{0}   ,;:;;,".format(majorMinorVersion))
+    Print.silly("                       ;;;;;")
+    Print.silly("               .=',    ;:;;:,")
+    Print.silly("              /_', \"=. ';:;:;")
+    Print.silly("              @=:__,  \\,;:;:'")
+    Print.silly("                _(\\.=  ;:;;'")
+    Print.silly('               `"_(  _/="`')
+    Print.silly("                `\"'")
+    Print.silly("")
 
 
 def _handle_extract(args, argOutFolder):
@@ -672,6 +672,20 @@ def _handle_verify(args):
 
 
 def _report_errors():
+    if machineReadableOutput:
+        errors = []
+        for e in err:
+            if isinstance(e, VerificationFailed):
+                errors.append(
+                    {"filename": str(e.in_file), "message": str(e.exception)}
+                )
+            else:
+                errors.append(
+                    {"filename": str(e["filename"]), "message": e["error"]}
+                )
+        Print.summary(errors)
+        return 1 if err else 0
+
     if not err:
         return 0
     Print.info(
@@ -703,6 +717,7 @@ def main():
             return
 
         _print_banner()
+        Print.startHeartbeat()
 
         barManager = (
             None
@@ -777,6 +792,8 @@ def main():
     except BaseException as e:
         Print.info("nut exception {0}".format(str(e)))
         raise
+    finally:
+        Print.stopHeartbeat()
 
     exitCode = _report_errors()
 

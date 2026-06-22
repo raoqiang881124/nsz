@@ -76,7 +76,7 @@ def launchGui():
                     "default_font = ['Roboto', 'data/fonts/Roboto-Regular.ttf', 'data/fonts/Roboto-Italic.ttf', 'data/fonts/Roboto-Bold.ttf', 'data/fonts/Roboto-BoldItalic.ttf']\n"
                 )
         if brokenKivyConfig:
-            Print.info(f"[INFO   ] Fixing {kivyConfigPath}")
+            Print.info(f"Fixing {kivyConfigPath}", "INFO")
             with open(kivyConfigPath, "w", encoding="utf-8") as f:
                 f.writelines(lines)
     return GUI().run()

@@ -294,7 +294,7 @@ class Pfs0(BaseFs):
                 .rstrip(" \t\r\n\0")
             )
             stringEndOffset = nameOffset
-            Print.info(f"[OPEN  ]	 {name} {hex(size)} bytes at {hex(offset)}")
+            Print.info(f"{name} {hex(size)} bytes at {hex(offset)}", "OPEN")
 
             self.readInt32()  # junk data
 

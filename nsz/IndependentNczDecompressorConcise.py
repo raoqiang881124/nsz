@@ -131,7 +131,7 @@ if __name__ == "__main__":
     hexHash = __decompressNcz(open(argv[1], "rb"), open(argv[2], "wb"))
     fileNameHash = Path(argv[1]).stem.lower()
     if hexHash[:32] == fileNameHash:
-        Print.info("[VERIFIED]   {0}".format(Path(argv[2]).name))
+        Print.info("{0}".format(Path(argv[2]).name), "VERIFIED")
     else:
         Print.error(
             "[MISMATCH]   Filename startes with {0} but {1} was expected - hash verified failed!".format(

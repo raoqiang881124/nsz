@@ -78,8 +78,8 @@ def CreateTargetDict(targetFolder, args, extension, filesAtTarget=None, alreadyE
                 or filePath.suffix == ".nspz"
                 or filePath.suffix == ".nsx"
             ) and (extension is None or filePath.suffix == extension):
-                Print.info("{0}".format(filePath))
-                Print.info("Extract TitleID/Version: {0} ".format(filePath.name))
+                Print.info("{0}".format(filePath), "CHECKING")
+                Print.info("Extracting TitleID/Version from {0}".format(filePath.name), "EXTRACT")
                 filesAtTarget[filePath.name.lower()] = filePath_str
                 extractedIdVersion = ExtractTitleIDAndVersion(filePath, args)
                 if extractedIdVersion is None:
@@ -99,7 +99,7 @@ def CreateTargetDict(targetFolder, args, extension, filesAtTarget=None, alreadyE
                 else:
                     titleIDEntry[version].append(filePath_str)
                 alreadyExists[titleID] = titleIDEntry
-                Print.info("=> {0} {1}".format(titleID, version))
+                Print.info("TitleId: {0} Version: {1}".format(titleID, version), "FOUND")
         except BaseException as e:
             Print.info("")
             Print.exception()
@@ -192,7 +192,7 @@ def delete_source_file(source_file_path, outFolder):
     if filePath.exists():
         resultFile = Path(targetExtension(outFolder.joinpath(filePath.name)))
         if resultFile.exists():
-            Print.info("[DELETING]   Source file {0}".format(source_file_path))
+            Print.info("Source file {0}".format(source_file_path), "DELETING")
             remove(source_file_path)
         else:
             Print.warning(

@@ -124,7 +124,7 @@ def blockCompressContainer(
         if not keep:
             if isinstance(nspf, Nca.Nca) and nspf.header is not None:
                 if nspf.header.contentType == Type.Content.DATA:
-                    Print.info("[SKIPPED]    Delta fragment {0}".format(nspf._path))
+                    Print.info("Delta fragment {0}".format(nspf._path), "SKIPPED")
                     continue
         if (
             isinstance(nspf, Nca.Nca)

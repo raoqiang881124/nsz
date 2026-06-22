@@ -14,7 +14,9 @@ class VerificationException(Exception):
     pass
 
 
-def decompress(filePath, outputDir, fixPadding, statusReportInfo=None, pleaseNoPrint=None):
+def decompress(
+    filePath, outputDir, fixPadding, statusReportInfo=None, pleaseNoPrint=None
+):
     if isNspNsz(filePath):
         __decompressNsz(
             filePath,
@@ -46,7 +48,9 @@ def decompress(filePath, outputDir, fixPadding, statusReportInfo=None, pleaseNoP
             if outputDir is None
             else str(Path(outputDir).joinpath(Path(filePathNca).name))
         )
-        Print.info("Decompressing %s -> %s" % (filePath, outPath), pleaseNoPrint)
+        Print.info(
+            "Decompressing %s -> %s" % (filePath, outPath), pleaseNoPrint=pleaseNoPrint
+        )
         inFile = None
         try:
             inFile = factory(filePath)
@@ -64,13 +68,18 @@ def decompress(filePath, outputDir, fixPadding, statusReportInfo=None, pleaseNoP
                 )
                 fileNameHash = Path(filePath).stem.lower()
                 if hexHash[:32] == fileNameHash:
-                    Print.info("[VERIFIED]   {0}".format(filePathNca), pleaseNoPrint)
+                    Print.info(
+                        "{0}".format(filePathNca),
+                        "VERIFIED",
+                        pleaseNoPrint=pleaseNoPrint,
+                    )
                 else:
                     Print.info(
-                        "[MISMATCH]   Filename startes with {0} but {1} was expected - hash verified failed!".format(
+                        "Filename startes with {0} but {1} was expected - hash verified failed!".format(
                             fileNameHash, hexHash[:32]
                         ),
-                        pleaseNoPrint,
+                        "MISMATCH",
+                        pleaseNoPrint=pleaseNoPrint,
                     )
                 Print.progress("Complete", {"filePath": str(outPath)})
         except BaseException as ex:
@@ -156,7 +165,7 @@ def __decompressContainer(
         barManager = enlighten.get_manager()
 
     for nspf in readContainer:
-        Print.info("[EXISTS]     {0}".format(nspf._path), pleaseNoPrint)
+        Print.info("{0}".format(nspf._path), "EXISTS", pleaseNoPrint=pleaseNoPrint)
         if not nspf._path.endswith(".ncz"):
             verifyFile = nspf._path.endswith(".nca") and not nspf._path.endswith(
                 ".cnmt.nca"
@@ -173,17 +182,29 @@ def __decompressContainer(
                 if hasattr(nspf.f, "ticketless"):
                     # This ticket conditional was added to prevent the following exception from occurring when processing a ticketless dump file:
                     # nut exception: Verification detected hash mismatch
-                    Print.info("[TICKETLESS] {0}".format(nspf._path), pleaseNoPrint)
+                    Print.info(
+                        "{0}".format(nspf._path),
+                        "TICKETLESS",
+                        pleaseNoPrint=pleaseNoPrint,
+                    )
                 else:
                     if hashHexdigest in fileHashes:
-                        Print.info(f"[NCA HASH]   {hashHexdigest}", pleaseNoPrint)
                         Print.info(
-                            f"[VERIFIED]   {nspf._path} {hashHexdigest}", pleaseNoPrint
+                            hashHexdigest, "NCA HASH", pleaseNoPrint=pleaseNoPrint
+                        )
+                        Print.info(
+                            f"{nspf._path} {hashHexdigest}",
+                            "VERIFIED",
+                            pleaseNoPrint=pleaseNoPrint,
                         )
                     else:
-                        Print.info(f"[NCA HASH]   {hashHexdigest}", pleaseNoPrint)
                         Print.info(
-                            f"[CORRUPTED]  {nspf._path} {hashHexdigest}", pleaseNoPrint
+                            hashHexdigest, "NCA HASH", pleaseNoPrint=pleaseNoPrint
+                        )
+                        Print.info(
+                            f"{nspf._path} {hashHexdigest}",
+                            "CORRUPTED",
+                            pleaseNoPrint=pleaseNoPrint,
                         )
                         if raiseVerificationException:
                             raise VerificationException(
@@ -216,14 +237,20 @@ def __decompressContainer(
         if hasattr(nspf.f, "ticketless"):
             # This ticket conditional was added to prevent the following exception from occurring when processing a ticketless dump file:
             # nut exception: Verification detected hash mismatch
-            Print.info("[TICKETLESS] {0}".format(nspf._path), pleaseNoPrint)
+            Print.info(
+                "{0}".format(nspf._path), "TICKETLESS", pleaseNoPrint=pleaseNoPrint
+            )
         else:
             if hexHash in fileHashes:
-                Print.info(f"[NCA HASH]   {hexHash}", pleaseNoPrint)
-                Print.info(f"[VERIFIED]   {nspf._path}", pleaseNoPrint)
+                Print.info(hexHash, "NCA HASH", pleaseNoPrint=pleaseNoPrint)
+                Print.info(
+                    "{0}".format(nspf._path), "VERIFIED", pleaseNoPrint=pleaseNoPrint
+                )
             else:
-                Print.info(f"[NCA HASH]   {hexHash}", pleaseNoPrint)
-                Print.info(f"[CORRUPTED]  {nspf._path}", pleaseNoPrint)
+                Print.info(hexHash, "NCA HASH", pleaseNoPrint=pleaseNoPrint)
+                Print.info(
+                    "{0}".format(nspf._path), "CORRUPTED", pleaseNoPrint=pleaseNoPrint
+                )
                 if raiseVerificationException:
                     raise VerificationException("Verification detected hash mismatch")
 
@@ -294,7 +321,7 @@ def __decompressNcz(
     useBlockCompression = blockMagic == b"NCZBLOCK"
     blockDecompressorReader = None
     if useBlockCompression:
-        Print.info(f"[NCZBLOCK]   Using Block decompression for {nspf._path}")
+        Print.info(f"Using Block decompression for {nspf._path}", "NCZBLOCK")
         BlockHeader = Header.Block(nspf)
         blockDecompressorReader = BlockDecompressorReader.BlockDecompressorReader(
             nspf, BlockHeader
@@ -479,7 +506,10 @@ def __decompressNsz(
                 if outputDir is None
                 else str(Path(outputDir).joinpath(Path(filePathNsp).name))
             )
-            Print.info("Decompressing %s -> %s" % (filePath, outPath), pleaseNoPrint)
+            Print.info(
+                "Decompressing %s -> %s" % (filePath, outPath),
+                pleaseNoPrint=pleaseNoPrint,
+            )
             with Pfs0.Pfs0Stream(
                 container.getPaddedHeaderSize()
                 if fixPadding
@@ -518,7 +548,7 @@ def __decompressNsz(
                     pleaseNoPrint,
                     "Verifying",
                 )
-                Print.info("[NSP SHA256] " + nsp.getHash())
+                Print.info(nsp.getHash(), "NSP SHA256")
                 if originalFilePath is not None:
                     CHUNK_SZ = 0x100000
                     originalHash = sha256()
@@ -593,11 +623,11 @@ def __decompressNsz(
                         bar.manager.stop()
                     elif statusReportInfo is None:
                         Print.progress("Complete", {"filePath": str(originalFilePath)})
-                    Print.info("[NSP SHA256] " + originalHashHex)
+                    Print.info(originalHashHex, "NSP SHA256")
                     if nsp.getHash() == originalHashHex:
-                        Print.info("[VERIFIED]   NSP SHA256")
+                        Print.info("NSP SHA256", "VERIFIED")
                     else:
-                        Print.info("[MISSMATCH]  NSP SHA256")
+                        Print.info("NSP SHA256", "MISSMATCH")
                         if raisePfs0Exception:
                             raise VerificationException(
                                 "Verification detected NSP SHA256 hash mismatch!"
@@ -629,7 +659,9 @@ def __decompressXcz(
             if outputDir is None
             else str(Path(outputDir).joinpath(Path(filePathXci).name))
         )
-        Print.info("Decompressing %s -> %s" % (filePath, outPath), pleaseNoPrint)
+        Print.info(
+            "Decompressing %s -> %s" % (filePath, outPath), pleaseNoPrint=pleaseNoPrint
+        )
         assert container.hfs0 is not None
         with Xci.XciStream(
             outPath, originalXciPath=filePath

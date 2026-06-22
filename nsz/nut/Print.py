@@ -1,6 +1,7 @@
 import sys
 import time
 import json
+import threading
 from sys import argv
 from multiprocessing.process import current_process
 from nsz.ParseArguments import ParseArguments
@@ -20,6 +21,14 @@ lastMinimalProgressLength = 0
 spinnerFrames = ["|", "/", "-", "\\"]
 spinnerIndex = 0
 
+# Guards stdout so the heartbeat thread can't interleave with a write from
+# the main thread (or another process pausing via pleaseNoPrint) mid-line.
+_stdoutLock = threading.Lock()
+
+heartbeatIntervalSeconds = 5
+_heartbeatThread = None
+_heartbeatStop = None
+
 if len(argv) > 1:
     # We must re-parse the command line parameters here because this module
     # is re-imported in multiple modules which resets the variables each import.
@@ -35,21 +44,42 @@ if len(argv) > 1:
         enableInfo = False
 
 
-def info(s, pleaseNoPrint=None):
+def _write(line):
+    with _stdoutLock:
+        sys.stdout.write(line + "\n")
+        sys.stdout.flush()
+
+def silly(s, action=None):
     if silent or not enableInfo:
         return
 
-    if pleaseNoPrint is None:
-        if not machineReadableOutput:
-            sys.stdout.write(s + "\n")
+    if machineReadableOutput:
+        return
+
+    info(s, action)
+
+def info(s, action=None, pleaseNoPrint=None):
+    if silent or not enableInfo:
+        return
+
+    if machineReadableOutput:
+        payload = {"type": "info", "message": s}
+        if action is not None:
+            payload["action"] = action
+        line = json.dumps(payload)
+    elif action is not None:
+        line = f"[{action}] {s}"
     else:
-        if not machineReadableOutput:
-            while pleaseNoPrint.value() > 0:
-                time.sleep(0.01)
-            pleaseNoPrint.increment()
-            sys.stdout.write(s + "\n")
-            sys.stdout.flush()
-            pleaseNoPrint.decrement()
+        line = s
+
+    if pleaseNoPrint is None:
+        _write(line)
+    else:
+        while pleaseNoPrint.value() > 0:
+            time.sleep(0.01)
+        pleaseNoPrint.increment()
+        _write(line)
+        pleaseNoPrint.decrement()
 
 
 def error(errorCode, s):
@@ -58,7 +88,7 @@ def error(errorCode, s):
     if machineReadableOutput:
         s = json.dumps({"type": "error", "code": errorCode, "message": s})
 
-    sys.stdout.write(s + "\n")
+    _write(s)
 
 
 def warning(s):
@@ -67,7 +97,50 @@ def warning(s):
     if machineReadableOutput:
         s = json.dumps({"type": "warning", "message": s})
 
-    sys.stdout.write(s + "\n")
+    _write(s)
+
+
+def summary(errors):
+    """Final machine-readable status line emitted once processing has finished."""
+    if not machineReadableOutput:
+        return
+    _write(
+        json.dumps(
+            {
+                "type": "summary",
+                "success": len(errors) == 0,
+                "errorCount": len(errors),
+                "errors": errors,
+            }
+        )
+    )
+
+
+def startHeartbeat(intervalSeconds=None):
+    """Emit a periodic JSON heartbeat line so a wrapper can detect a hung process."""
+    global _heartbeatThread, _heartbeatStop
+    if not machineReadableOutput or _heartbeatThread is not None:
+        return
+    interval = heartbeatIntervalSeconds if intervalSeconds is None else intervalSeconds
+    _heartbeatStop = threading.Event()
+
+    def _run():
+        while not _heartbeatStop.wait(interval):
+            if silent:
+                continue
+            _write(json.dumps({"type": "heartbeat", "time": time.time()}))
+
+    _heartbeatThread = threading.Thread(target=_run, daemon=True)
+    _heartbeatThread.start()
+
+
+def stopHeartbeat():
+    global _heartbeatThread, _heartbeatStop
+    if _heartbeatThread is None:
+        return
+    _heartbeatStop.set()
+    _heartbeatThread.join(timeout=1)
+    _heartbeatThread = None
 
 
 def debug(s):
@@ -111,7 +184,7 @@ def progress(job, s):
 
         line = json.dumps(payload)
         if line != lastProgress:
-            sys.stdout.write(line + "\n")
+            _write(line)
             lastProgress = line
         return
 
