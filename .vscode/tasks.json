@@ -27,6 +27,20 @@
         "${workspaceFolder}/.devcontainer/build-windows.sh"
       ],
       "problemMatcher": []
+    },
+    {
+      "label": "Build All",
+      "dependsOn": [
+        "Build Linux",
+        "Build Windows",
+        "Build macOS"
+      ],
+      "dependsOrder": "sequence",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
     }
   ]
 }
