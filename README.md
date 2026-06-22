@@ -13,28 +13,28 @@ This will be the new home in case GitHub ever takes down nsz. Please bookmark it
 
 - This project does **NOT** incorporate any copyrighted material such as cryptographic keys. All keys must be provided by the user.
 - This project does **NOT** circumvent any technological protection measures. The NSZ file format purposely keeps all technological protection measures in place.
-- This project shall only be used for legally purchased games.
+- This project shall only be used for legally purchased games or homebrew applications.
 - This project is MIT licensed. Check [LICENSE](https://github.com/nicoboss/nsz/blob/master/LICENSE) for more information.
 
-## Running this tool
-
-There are several ways to run this tool. Choose from one of the methods below.
+## Requirements
 
 **You need to have a hactool compatible keys file in a suitable directory to use this tool**.
 
 You must legally obtain your keys!
 
-The keys file must be named either `prod.keys` or `keys.txt`. It must be located either in the `nsz` folder or:
+The keys file must be named either `prod.keys` or `keys.txt`. It must be located either in the directory in which you are running this software or:
 
 | OS      | Location                                                        |
 | ------- | --------------------------------------------------------------- |
-| Linux   | `$HOME/.switch/`, `$XDG_CONFIG_HOME/nsz/`, `$HOME/.config/nsz/` |
+| linux   | `$HOME/.switch/`, `$XDG_CONFIG_HOME/nsz/`, `$HOME/.config/nsz/` |
 | macOS   | `$HOME/.switch/`                                                |
 | windows | `%USERPROFILE%/.switch/`                                        |
 
-You can also provide a custom keys path at runtime using the `--keys /path/to/prod.keys` parameter. This may be a direct path to the file or a directory containing `prod.keys` / `keys.txt`.
+You can also provide a custom keys path at runtime using the `--keys /path/to/prod.keys` parameter. This may be a direct path to the file or a directory containing `prod.keys` or `keys.txt`.
 
-For a compact terminal progress style use `--minimal-output` to print only `<percentage>% <current step>`.
+## Running this tool
+
+There are several ways to run this tool. Choose from one of the methods below.
 
 ### Linux, Windows, and macOS binaries
 
@@ -44,9 +44,18 @@ On most Linux systems you will need to right-click the file, open the properties
 
 Mac systems are much more strict about which software is allowed to be ran on the system. You must make the file executable from the terminal with `chmod +x nsz-cli-macos` or `chmod +x nsz-gui-macos`. After trying to run the program you will be stopped by security. Go to System Settings > Privacy & Security then scroll down and choose to allow running the program.
 
-**The methods listed below require you to have [Python 3.6+](https://www.python.org/downloads) and pip3 installed.**
+### Running from source
+
+Requires [Python 3.6+](https://www.python.org/downloads).
+
+This tool can be run from the [source code](https://github.com/nicoboss/nsz/archive/refs/heads/master.zip).
+
+1. Run `pip3 install -r requirements.txt` to install the requirements or `pip3 install -r requirements-gui.txt` to install the requirements for the GUI.
+2. Run `python3 nsz.py` to start the program.
 
 ### PIP Package
+
+Requires [Python 3.6+](https://www.python.org/downloads).
 
 Use the following command to install the console-only version:
 
@@ -63,14 +72,7 @@ Use the following command to install the GUI version:
 3. Enter "nsz" and unselect "use prebuild" then press install
 4. Navigate to "Terminal" to use the "nsz" command
 5. The first time it will tell you where to copy your prod.keys which you should do using the "cp" command
-6. Use any command line arguments you want like "nsz -D file.nsz" to decompress your game
-
-### Running from source
-
-The tool can be run from the [source code](https://github.com/nicoboss/nsz/archive/refs/heads/master.zip).
-
-1. Run `pip3 install -r requirements.txt` to install the requirements or `pip3 install -r requirements-gui.txt` to install the requirements for the GUI.
-2. Run `python3 nsz.py` to start the program.
+6. Use any command line arguments you want like "nsz -D file.nsz" to decompress your application
 
 ## Docker Container
 
@@ -92,23 +94,23 @@ Quick example:
 make -C container build-single-arch
 
 # Use with your Nintendo Switch keys
-docker run --rm -v "$(pwd)":/data -v "$HOME/.switch/prod.keys":/root/.switch/prod.keys nsz-tool:latest game.nsp
+docker run --rm -v "$(pwd)":/data -v "$HOME/.switch/prod.keys":/root/.switch/prod.keys nsz-tool:latest application.nsp
 ```
 
 ## Usage
 
 ```
-nsz.py --help
-usage: nsz.py [-h] [-C] [-D] [-l LEVEL] [-L] [-B] [-S] [-s BS] [-V] [-Q] [-K]
-              [-F] [-p] [-P] [-t THREADS] [-m MULTI] [-o [OUTPUT]] [-w] [-r]
-              [--rm-source] [-i] [--depth DEPTH] [-x]
-              [--extractregex EXTRACTREGEX] [--titlekeys] [--undupe]
-              [--undupe-dryrun] [--undupe-rename] [--undupe-hardlink]
-              [--undupe-prioritylist UNDUPE_PRIORITYLIST]
-              [--undupe-whitelist UNDUPE_WHITELIST]
-              [--undupe-blacklist UNDUPE_BLACKLIST] [--undupe-old-versions]
-              [-c CREATE]
-              [file ...]
+nsz --help
+usage: nsz [-h] [-C] [-D] [-l LEVEL] [-L] [-B] [-S] [-s BS] [-V] [-Q] [-K]
+           [-F] [-P] [-t THREADS] [-m MULTI] [-o [OUTPUT]] [-w] [-r]
+           [--rm-source] [-i] [--depth DEPTH] [-x]
+           [--extractregex EXTRACTREGEX] [--titlekeys] [--undupe]
+           [--undupe-dryrun] [--undupe-rename] [--undupe-hardlink]
+           [--undupe-prioritylist UNDUPE_PRIORITYLIST]
+           [--undupe-whitelist UNDUPE_WHITELIST]
+           [--undupe-blacklist UNDUPE_BLACKLIST] [--undupe-old-versions]
+           [-c CREATE] [--machine-readable] [--minimal-output] [--keys KEYS]
+           [file ...]
 
 positional arguments:
   file
@@ -139,22 +141,14 @@ options:
                         exception on hash mismatch and verify existing NSP and
                         NSZ files when given as parameter. Requires --keep
                         when used during compression.
-                        NOTE: Some hash checks will be skipped when processing a ticketless dump file.
   -Q, --quick-verify    Same as --verify but skips the NSP SHA256 hash
                         verification and only verifies NCA hashes. Does not
                         require --keep when used during compression.
-                        NOTE: Some hash checks will be skipped when processing a ticketless dump file.
   -K, --keep            Keep all useless files and partitions during
                         compression to allow bit-identical recreation
   -F, --fix-padding     Fixes PFS0 padding to match the nxdumptool/no-intro
                         standard. Incompatible with --verify so --quick-verify
                         will be used instead.
-  -p, --parseCnmt       Extract TitleId/Version from Cnmt if this information
-                        cannot be obtained from the filename. Required for
-                        skipping/overwriting existing files and --rm-old-
-                        version to work properly if some not every file is
-                        named properly. Supported filenames:
-                        *TitleID*[vVersion]*
   -P, --alwaysParseCnmt
                         Always extract TitleId/Version from Cnmt and never
                         trust filenames
@@ -184,7 +178,6 @@ options:
                         missing keys to ./titlekeys.txt and JSON files inside
                         ./titledb/ (obtainable from
                         https://github.com/blawar/titledb).
-                        NOTE: This parameter has no effect when processing a ticketless dump file.
   --undupe              Deleted all duplicates (games with same ID and
                         Version). The Files folder will get parsed in order so
                         the later in the argument list the more likely the
@@ -213,9 +206,13 @@ options:
                         Example: --create out.nsp .\in
   --machine-readable    Restricts terminal output and reports in a way that
                         is easier for a machine to read.
+  --minimal-output      Print only minimal progress updates in the format
+                        "<percentage>% <current step>".
+  --keys KEYS           Path to a hactool compatible keys file (or directory
+                        containing prod.keys/keys.txt).
 ```
 
-## More Usage Examples
+## Usage Examples
 
 ### Compress all files in a folder
 
