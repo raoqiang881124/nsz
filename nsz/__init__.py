@@ -95,7 +95,15 @@ def solidCompressTask(
                 id,
                 pleaseNoPrint,
             )
-            assert outFile is not None
+            if outFile is None:
+                statusReport[id] = [0, 0, 1, "Failed"]
+                problemQueue.put(
+                    {
+                        "filename": filePath,
+                        "error": "Compression failed. Output file was not created.",
+                    }
+                )
+                continue
             if verifyArg:
                 Print.info("[VERIFY NSZ] {0}".format(outFile))
                 try:
@@ -114,11 +122,26 @@ def solidCompressTask(
                     remove(outFile)
                     problemQueue.put(VerificationFailed(exception=e, in_file=filePath))
                     continue
+                except BaseException:
+                    statusReport[id] = [0, 0, 1, "Failed"]
+                    problemQueue.put(
+                        {
+                            "filename": filePath,
+                            "error": format_exc(),
+                        }
+                    )
+                    continue
         except KeyboardInterrupt:
             Print.info("Keyboard exception")
         except BaseException as e:
             Print.info("nut exception: {0}".format(str(e)))
-            raise
+            statusReport[id] = [0, 0, 1, "Failed"]
+            problemQueue.put(
+                {
+                    "filename": filePath if "filePath" in locals() else "<unknown>",
+                    "error": format_exc(),
+                }
+            )
 
 
 def compress(filePath, outputDir, args, work, amountOfTastkQueued):

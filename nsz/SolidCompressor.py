@@ -278,6 +278,7 @@ def solidCompressNsp(
         pleaseNoPrint,
     )
 
+    failed = False
     try:
         with Pfs0.Pfs0Stream(
             container.getPaddedHeaderSize()
@@ -301,12 +302,15 @@ def solidCompressNsp(
         Print.progress("Complete", {"filePath": str(nszPath)})
         sys.stdout.flush()
     except BaseException as ex:
+        failed = True
         if not isinstance(ex, KeyboardInterrupt):
             Print.error(500, format_exc())
         if nszPath.is_file():
             nszPath.unlink()
 
     container.close()
+    if failed:
+        return None
     return nszPath
 
 
@@ -336,6 +340,7 @@ def solidCompressXci(
         pleaseNoPrint,
     )
 
+    failed = False
     try:
         # need filepath to copy XCI container settings
         assert container.hfs0 is not None
@@ -369,10 +374,13 @@ def solidCompressXci(
         Print.progress("Complete", {"filePath": str(xczPath)})
         sys.stdout.flush()
     except BaseException as ex:
+        failed = True
         if not isinstance(ex, KeyboardInterrupt):
             Print.error(501, format_exc())
         if xczPath.is_file():
             xczPath.unlink()
 
     container.close()
+    if failed:
+        return None
     return xczPath
