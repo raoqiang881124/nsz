@@ -41,7 +41,7 @@ class Hfs0Stream(BaseFile):
             self.written = False
         Print.info(
             f"[ADDING]     {name} {hex(size)} bytes to HFS0 at {hex(self.addpos)}",
-            pleaseNoPrint,
+            pleaseNoPrint=pleaseNoPrint,
         )
         partition = self.partition(self.addpos, size, n=BaseFile())
         self.files.append(

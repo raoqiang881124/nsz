@@ -97,7 +97,7 @@ def processContainer(
                 if nspf.header.contentType == Type.Content.DATA:
                     Print.info(
                         "[SKIPPED]	Delta fragment {0}".format(nspf._path),
-                        pleaseNoPrint,
+                        pleaseNoPrint=pleaseNoPrint,
                     )
                     continue
         if (
@@ -242,7 +242,7 @@ def processContainer(
                             written,
                             nspf._path,
                         ),
-                        pleaseNoPrint,
+                        pleaseNoPrint=pleaseNoPrint,
                     )
                     writeContainer.resize(newFileName, written)
                     continue
@@ -275,7 +275,7 @@ def solidCompressNsp(
 
     Print.info(
         f"Solid compressing (level {compressionLevel}{' ldm' if useLongDistanceMode else ''}) {filePath} -> {nszPath}",
-        pleaseNoPrint,
+        pleaseNoPrint=pleaseNoPrint,
     )
 
     failed = False
@@ -339,7 +339,7 @@ def solidCompressXci(
 
     Print.info(
         f"Solid compressing (level {compressionLevel}{' ldm' if useLongDistanceMode else ''}) {filePath} -> {xczPath}",
-        pleaseNoPrint,
+        pleaseNoPrint=pleaseNoPrint,
     )
 
     failed = False

@@ -61,7 +61,7 @@ class XciStream(BaseFile):
     def add(self, name, size, pleaseNoPrint=None):
         Print.info(
             f"[ADDING]     {name} {hex(size)} bytes to XCI at {hex(self.f.tell())}",
-            pleaseNoPrint,
+            pleaseNoPrint=pleaseNoPrint,
         )
         partition = self.partition(self.f.tell(), size, n=BaseFile())
         self.files.append(
