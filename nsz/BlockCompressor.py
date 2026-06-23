@@ -495,9 +495,7 @@ def blockCompressXci(
                         partitionOut.actualSize
                     )
                     xci.hfs0.resize(partitionIn._path, alignedSize)
-                    Print.info(
-                        f"[RESIZE]     {partitionIn._path} to {hex(alignedSize)}"
-                    )
+                    Print.info(f"{partitionIn._path} to {hex(alignedSize)}", "RESIZE")
                     xci.hfs0.addpos += alignedSize
 
         Print.progress("Complete", {"filePath": str(xczPath)})

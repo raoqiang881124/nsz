@@ -96,7 +96,8 @@ def processContainer(
             if isinstance(nspf, Nca.Nca) and nspf.header is not None:
                 if nspf.header.contentType == Type.Content.DATA:
                     Print.info(
-                        "[SKIPPED]	Delta fragment {0}".format(nspf._path),
+                        "Delta fragment {0}".format(nspf._path),
+                        "SKIPPED",
                         pleaseNoPrint=pleaseNoPrint,
                     )
                     continue
@@ -369,7 +370,8 @@ def solidCompressXci(
                     )
                     xci.hfs0.resize(partitionIn._path, alignedSize)
                     Print.info(
-                        f"[RESIZE]	 {partitionIn._path} to {hex(alignedSize)}"
+                        f"{partitionIn._path} to {hex(alignedSize)}"
+                        "RESIZE"
                     )
                     xci.hfs0.addpos += alignedSize
 
