@@ -6,7 +6,7 @@
       "type": "shell",
       "command": "bash",
       "args": [
-        "${workspaceFolder}/.devcontainer/build-linux.sh"
+        "${workspaceFolder}/scripts/build-linux.sh"
       ],
       "problemMatcher": []
     },
@@ -15,7 +15,7 @@
       "type": "shell",
       "command": "bash",
       "args": [
-        "${workspaceFolder}/.devcontainer/build-macos.sh"
+        "${workspaceFolder}/scripts/build-macos.sh"
       ],
       "problemMatcher": []
     },
@@ -24,7 +24,7 @@
       "type": "shell",
       "command": "bash",
       "args": [
-        "${workspaceFolder}/.devcontainer/build-windows.sh"
+        "${workspaceFolder}/scripts/build-windows.sh"
       ],
       "problemMatcher": []
     },
