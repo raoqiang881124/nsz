@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    name: Build ${{ matrix.os-name }}
+    name: Build ${{ matrix.os-name }}-${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -15,16 +15,28 @@ jobs:
         include:
           - os: ubuntu-22.04
             os-name: linux
-            artifact-name: nsz-cli-linux
-            binary-path: dist/nsz
+            arch: x64
+            artifact-name: nsz-cli-linux-x64
+          - os: ubuntu-22.04-arm
+            os-name: linux
+            arch: arm64
+            artifact-name: nsz-cli-linux-arm64
+          - os: macos-13
+            os-name: macos
+            arch: x64
+            artifact-name: nsz-cli-macos-x64
           - os: macos-15
             os-name: macos
-            artifact-name: nsz-cli-macos
-            binary-path: dist/nsz
+            arch: arm64
+            artifact-name: nsz-cli-macos-arm64
           - os: windows-2022
             os-name: windows
-            artifact-name: nsz-cli-windows
-            binary-path: dist/nsz.exe
+            arch: x64
+            artifact-name: nsz-cli-windows-x64
+          - os: windows-11-arm
+            os-name: windows
+            arch: arm64
+            artifact-name: nsz-cli-windows-arm64
 
     steps:
       - name: Checkout
@@ -66,7 +78,7 @@ jobs:
           path: ${{ matrix.artifact-name }}.exe
 
   build-gui:
-    name: Build GUI ${{ matrix.os-name }}
+    name: Build GUI ${{ matrix.os-name }}-${{ matrix.arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -74,13 +86,28 @@ jobs:
         include:
           - os: ubuntu-22.04
             os-name: linux
-            artifact-name: nsz-gui-linux
+            arch: x64
+            artifact-name: nsz-gui-linux-x64
+          - os: ubuntu-22.04-arm
+            os-name: linux
+            arch: arm64
+            artifact-name: nsz-gui-linux-arm64
+          - os: macos-13
+            os-name: macos
+            arch: x64
+            artifact-name: nsz-gui-macos-x64
           - os: macos-15
             os-name: macos
-            artifact-name: nsz-gui-macos
+            arch: arm64
+            artifact-name: nsz-gui-macos-arm64
           - os: windows-2022
             os-name: windows
-            artifact-name: nsz-gui-windows
+            arch: x64
+            artifact-name: nsz-gui-windows-x64
+          - os: windows-11-arm
+            os-name: windows
+            arch: arm64
+            artifact-name: nsz-gui-windows-arm64
 
     steps:
       - name: Checkout
@@ -178,6 +205,14 @@ jobs:
             (cd "$dir" && zip -j "../../$name.zip" *)
           done
 
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          for dir in artifacts/nsz-cli-*; do
+            cp "$dir"/* release/
+          done
+          cp nsz-gui-*.zip release/
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -185,10 +220,4 @@ jobs:
           name: NSZ ${{ github.ref_name }}
           draft: false
           prerelease: false
-          files: |
-            artifacts/nsz-cli-linux/nsz-cli-linux
-            artifacts/nsz-cli-macos/nsz-cli-macos
-            artifacts/nsz-cli-windows/nsz-cli-windows.exe
-            nsz-gui-linux.zip
-            nsz-gui-macos.zip
-            nsz-gui-windows.zip
+          files: release/*

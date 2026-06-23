@@ -16,19 +16,26 @@ export WINEPREFIX=/opt/wine
 export WINEDEBUG=-all
 PYI_LOG_LEVEL="${PYI_LOG_LEVEL:-WARN}"
 
+case "$(uname -m)" in
+	x86_64) arch=x64 ;;
+	aarch64 | arm64) arch=arm64 ;;
+	*) echo "Error: unsupported architecture $(uname -m)" >&2; exit 1 ;;
+esac
+distpath="dist/win32-$arch"
+
 if ! xvfb-run -a wine cmd /c where strip >/dev/null 2>&1; then
 	echo "error: strip.exe not found in Wine PATH. Rebuild the devcontainer image to install LLVM strip." >&2
 	exit 1
 fi
 
 if $build_cli; then
-	rm -rf dist/windows/nsz.exe
-	xvfb-run -a wine "C:\\Python311\\python.exe" -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath dist/windows dev/nsz-cli.spec
-	echo "Windows CLI binary: dist/windows/nsz-cli.exe"
+	rm -rf "$distpath/nsz.exe"
+	xvfb-run -a wine "C:\\Python311\\python.exe" -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath "$distpath" dev/nsz-cli.spec
+	echo "Windows CLI binary: $distpath/nsz-cli.exe"
 fi
 
 if $build_gui; then
-	rm -rf build dist/windows/nsz-gui.exe
-	xvfb-run -a wine "C:\\Python311\\python.exe" -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath dist/windows dev/nsz-gui.spec
-	echo "Windows GUI binary: dist/windows/nsz-gui.exe"
+	rm -rf build "$distpath/nsz-gui.exe"
+	xvfb-run -a wine "C:\\Python311\\python.exe" -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath "$distpath" dev/nsz-gui.spec
+	echo "Windows GUI binary: $distpath/nsz-gui.exe"
 fi

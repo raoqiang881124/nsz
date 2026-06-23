@@ -21,14 +21,21 @@ pip3 install --no-cache-dir -r dev/requirements-pyinstaller.txt
 
 PYI_LOG_LEVEL="${PYI_LOG_LEVEL:-WARN}"
 
+case "$(uname -m)" in
+	x86_64) arch=x64 ;;
+	arm64) arch=arm64 ;;
+	*) echo "Error: unsupported architecture $(uname -m)" >&2; exit 1 ;;
+esac
+distpath="dist/darwin-$arch"
+
 if $build_cli; then
-	rm -rf dist/macos/nsz
-	python3 -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath dist/macos dev/nsz-cli.spec
-	echo "macOS CLI binary: dist/macos/nsz"
+	rm -rf "$distpath/nsz"
+	python3 -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath "$distpath" dev/nsz-cli.spec
+	echo "macOS CLI binary: $distpath/nsz"
 fi
 
 if $build_gui; then
-	rm -rf build dist/macos/nsz-gui
-	python3 -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath dist/macos dev/nsz-gui.spec
-	echo "macOS GUI binary: dist/macos/nsz-gui"
+	rm -rf build "$distpath/nsz-gui"
+	python3 -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath "$distpath" dev/nsz-gui.spec
+	echo "macOS GUI binary: $distpath/nsz-gui"
 fi
