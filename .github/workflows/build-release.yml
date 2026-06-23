@@ -21,10 +21,8 @@ jobs:
             os-name: linux
             arch: arm64
             artifact-name: nsz-cli-linux-arm64
-          - os: macos-13
-            os-name: macos
-            arch: x64
-            artifact-name: nsz-cli-macos-x64
+          # The macos-x64 build cannot be made because GitHub
+          # retired the macos-13 image in December 2025.
           - os: macos-15
             os-name: macos
             arch: arm64
@@ -92,10 +90,8 @@ jobs:
             os-name: linux
             arch: arm64
             artifact-name: nsz-gui-linux-arm64
-          - os: macos-13
-            os-name: macos
-            arch: x64
-            artifact-name: nsz-gui-macos-x64
+          # The macos-x64 build cannot be made because GitHub
+          # retired the macos-13 image in December 2025.
           - os: macos-15
             os-name: macos
             arch: arm64
@@ -104,10 +100,9 @@ jobs:
             os-name: windows
             arch: x64
             artifact-name: nsz-gui-windows-x64
-          - os: windows-11-arm
-            os-name: windows
-            arch: arm64
-            artifact-name: nsz-gui-windows-arm64
+          # windows-11-arm is excluded: Kivy's Windows build deps (e.g.
+          # kivy_deps.gstreamer_dev) only ship win32/win_amd64 wheels, so the
+          # GUI can't be built there with the current toolchain.
 
     steps:
       - name: Checkout
