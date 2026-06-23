@@ -23,12 +23,12 @@ PYI_LOG_LEVEL="${PYI_LOG_LEVEL:-WARN}"
 
 if $build_cli; then
 	rm -rf dist/macos/nsz
-	pyinstaller --log-level "$PYI_LOG_LEVEL" --distpath dist/macos dev/nsz-cli.spec
-	echo "macOS CLI binary: dist/macos/nsz-cli"
+	python3 -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath dist/macos dev/nsz-cli.spec
+	echo "macOS CLI binary: dist/macos/nsz"
 fi
 
 if $build_gui; then
 	rm -rf build dist/macos/nsz-gui
-	pyinstaller --log-level "$PYI_LOG_LEVEL" --distpath dist/macos dev/nsz-gui.spec
+	python3 -m PyInstaller --log-level "$PYI_LOG_LEVEL" --distpath dist/macos dev/nsz-gui.spec
 	echo "macOS GUI binary: dist/macos/nsz-gui"
 fi
