@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # This is needed as multiprocessing shouldn't include nsz
-# as it won't be able to optain __main__.__file__ and so crash inside Keys.py
+# as it won't be able to obtain __main__.__file__ and so crash inside Keys.py
 if __name__ == "__main__":
     import sys
     import pathlib

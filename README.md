@@ -2,7 +2,7 @@
 
 # NSZ
 
-A compression/decompresson script (with optional GUI) that compresses or decompresses Nintendo Switch dumps losslessly thanks to the [zstd](https://github.com/facebook/zstd) compression algorithm. The compressed file can be installed with supported NSW Homebrew Title Installers.
+A compression/decompression script (with optional GUI) that compresses or decompresses Nintendo Switch dumps losslessly thanks to the [zstd](https://github.com/facebook/zstd) compression algorithm. The compressed file can be installed with supported NSW Homebrew Title Installers.
 
 ## Legal
 

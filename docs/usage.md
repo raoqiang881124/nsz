@@ -79,7 +79,7 @@ options:
                         missing keys to ./titlekeys.txt and JSON files inside
                         ./titledb/ (obtainable from
                         https://github.com/blawar/titledb).
-  --undupe              Deleted all duplicates (games with same ID and
+  --undupe              Deletes all duplicates (games with same ID and
                         Version). The Files folder will get parsed in order so
                         the later in the argument list the more likely the
                         file is to be deleted
@@ -89,15 +89,15 @@ options:
   --undupe-hardlink     Hardlinks files to minimal standard:
                         [TitleId][vVersion].nsz
   --undupe-prioritylist UNDUPE_PRIORITYLIST
-                        Regex specifying which dublicate deletion should be
+                        Regex specifying which duplicate deletion should be
                         prioritized before following the normal deletion
                         order. Example: "^.*\.(nsp|xci)$"
   --undupe-whitelist UNDUPE_WHITELIST
-                        Regex specifying which dublicates should under no
+                        Regex specifying which duplicates should under no
                         circumstances be deleted. Example: "^.*\.(nsz|xcz)$"
   --undupe-blacklist UNDUPE_BLACKLIST
                         Regex specifying which files should always be deleted
-                        - even if they are not even a dublicate! Be careful!
+                        - even if they are not even a duplicate! Be careful!
                         Example: "^.*\.(nsp|xci)$"
   --undupe-old-versions
                         Removes every old version as long there is a newer one

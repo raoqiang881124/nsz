@@ -170,19 +170,19 @@ class ParseArguments:
             "--undupe-prioritylist",
             type=str,
             default="",
-            help=r'Regex specifying which dublicate deletion should be prioritized before following the normal deletion order. Example: "^.*\.(nsp|xci)$"',
+            help=r'Regex specifying which duplicate deletion should be prioritized before following the normal deletion order. Example: "^.*\.(nsp|xci)$"',
         )
         parser.add_argument(
             "--undupe-whitelist",
             type=str,
             default="",
-            help=r'Regex specifying which dublicates should under no circumstances be deleted. Example: "^.*\.(nsz|xcz)$"',
+            help=r'Regex specifying which duplicates should under no circumstances be deleted. Example: "^.*\.(nsz|xcz)$"',
         )
         parser.add_argument(
             "--undupe-blacklist",
             type=str,
             default="",
-            help=r'Regex specifying which files should always be deleted - even if they are not even a dublicate! Be careful! Example: "^.*\.(nsp|xci)$"',
+            help=r'Regex specifying which files should always be deleted - even if they are not even a duplicate! Be careful! Example: "^.*\.(nsp|xci)$"',
         )
         parser.add_argument(
             "--undupe-old-versions",

@@ -96,7 +96,7 @@ class GUI(App):
             return None
 
     def build(self):
-        realLevl = Logger.level
+        realLevel = Logger.level
         # To hide the wrongly appearance of "[WARNING] Both Window.minimum_width
         # and Window.minimum_height must be bigger than 0 for the size restriction
         # to take effect." caused by checking if booth variables are set after setting
@@ -104,7 +104,7 @@ class GUI(App):
         Logger.setLevel(logging.ERROR)
         Window.minimum_width = 800
         Window.minimum_height = 600
-        Logger.setLevel(realLevl)
+        Logger.setLevel(realLevel)
         Builder.load_file(getGuiPath("layout/GUI.kv"))
         self.title = f"NSZ GUI {GUI_TITLE_VERSION}"
         self.icon = getGuiPath("nsZip.png")

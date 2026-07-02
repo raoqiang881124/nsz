@@ -9,10 +9,10 @@ from binascii import hexlify as hx
 
 
 class EncryptedSection:
-    def __init__(self, offset, size, cryotoType, cryptoKey, cryptoCounter):
+    def __init__(self, offset, size, cryptoType, cryptoKey, cryptoCounter):
         self.offset = offset
         self.size = size
-        self.cryptoType = cryotoType
+        self.cryptoType = cryptoType
         self.cryptoKey = cryptoKey
         self.cryptoCounter = cryptoCounter
 

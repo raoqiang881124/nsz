@@ -9,7 +9,7 @@ from zstandard import (
     ZstdCompressor,
 )
 
-UNCOMPRESSABLE_HEADER_SIZE = 0x4000
+INCOMPRESSIBLE_HEADER_SIZE = 0x4000
 CHUNK_SZ = 0x1000000
 
 
@@ -109,7 +109,7 @@ def processContainer(
                 nspf.header.contentType == Type.Content.PROGRAM
                 or nspf.header.contentType == Type.Content.PUBLICDATA
             )
-            and nspf.size > UNCOMPRESSABLE_HEADER_SIZE
+            and nspf.size > INCOMPRESSIBLE_HEADER_SIZE
         ):
             if isNcaPacked(nspf):
                 assert nspf._path is not None
@@ -133,7 +133,7 @@ def processContainer(
                     start = f.tell()
 
                     nspf.seek(0)
-                    f.write(nspf.read(UNCOMPRESSABLE_HEADER_SIZE))
+                    f.write(nspf.read(INCOMPRESSIBLE_HEADER_SIZE))
 
                     sections = []
                     for fs in sortedFs(nspf):
@@ -158,17 +158,17 @@ def processContainer(
 
                     f.write(header)
 
-                    decompressedBytes = UNCOMPRESSABLE_HEADER_SIZE
+                    decompressedBytes = INCOMPRESSIBLE_HEADER_SIZE
 
                     statusReport[id] = [0, 0, nspf.size, "Compressing"]
                     reportProgress(0, nspf.size)
 
                     partitions = []
-                    if offsetFirstSection - UNCOMPRESSABLE_HEADER_SIZE > 0:
+                    if offsetFirstSection - INCOMPRESSIBLE_HEADER_SIZE > 0:
                         partitions.append(
                             nspf.partition(
-                                offset=UNCOMPRESSABLE_HEADER_SIZE,
-                                size=offsetFirstSection - UNCOMPRESSABLE_HEADER_SIZE,
+                                offset=INCOMPRESSIBLE_HEADER_SIZE,
+                                size=offsetFirstSection - INCOMPRESSIBLE_HEADER_SIZE,
                                 cryptoType=Type.Crypto.CTR.NONE,
                                 autoOpen=True,
                             )
@@ -185,9 +185,9 @@ def processContainer(
                                 autoOpen=True,
                             )
                         )
-                    if UNCOMPRESSABLE_HEADER_SIZE - offsetFirstSection > 0:
+                    if INCOMPRESSIBLE_HEADER_SIZE - offsetFirstSection > 0:
                         partitions[0].seek(
-                            UNCOMPRESSABLE_HEADER_SIZE - offsetFirstSection
+                            INCOMPRESSIBLE_HEADER_SIZE - offsetFirstSection
                         )
 
                     partNr = 0
@@ -317,7 +317,7 @@ def solidCompressNsp(
     return nszPath
 
 
-def allign0x200(n):
+def align0x200(n):
     return 0x200 - n % 0x200
 
 
@@ -365,7 +365,7 @@ def solidCompressXci(
                             id,
                             pleaseNoPrint,
                         )
-                    alignedSize = partitionOut.actualSize + allign0x200(
+                    alignedSize = partitionOut.actualSize + align0x200(
                         partitionOut.actualSize
                     )
                     xci.hfs0.resize(partitionIn._path, alignedSize)
