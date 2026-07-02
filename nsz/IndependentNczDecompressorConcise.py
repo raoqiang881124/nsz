@@ -134,7 +134,8 @@ if __name__ == "__main__":
         Print.info("{0}".format(Path(argv[2]).name), "VERIFIED")
     else:
         Print.error(
-            "[MISMATCH]   Filename startes with {0} but {1} was expected - hash verified failed!".format(
+            900,
+            "[MISMATCH]   Filename starts with {0} but {1} was expected - hash verified failed!".format(
                 fileNameHash, hexHash[:32]
             )
         )
