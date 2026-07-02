@@ -5,7 +5,7 @@ REM nsz.exe file path.
 SET "nszFilePath=%~dp0nsz.exe"
 
 REM Source directory path where to search for NSP/NSZ/XCI/XCZ files.
-SET "SrcDirectoryPath=C:\Nintendo Switch dumps"
+SET "SrcDirectoryPath=C:\dumps"
 
 REM 'True' to enable recursive NSP/NSZ/XCI/XCZ file search on source directory, 'False' to disable it.
 SET "EnableRecursiveSearch=False"

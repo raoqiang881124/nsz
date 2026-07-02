@@ -1,0 +1,46 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Linux",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/scripts/build-linux.sh"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build macOS",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/scripts/build-macos.sh"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Windows",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/scripts/build-windows.sh"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Build All",
+      "dependsOn": [
+        "Build Linux",
+        "Build Windows",
+        "Build macOS"
+      ],
+      "dependsOrder": "sequence",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}

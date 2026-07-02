@@ -12,7 +12,6 @@
 *.keys
 *keys.txt
 .vs/
-.vscode/
 ROMs/
 build/
 dist/

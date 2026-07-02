@@ -42,12 +42,12 @@ steps:
   
 - task: CmdLine@2
   inputs:
-    script: python nsz.py -C -V --keep -w -p -m 4 -t 4 -o C:\Users\Azure\.switch\tests\nsz_solid_out C:\Users\Azure\.switch\tests\nsp
+    script: python nsz.py -C -V --keep -w -m 4 -t 4 -o C:\Users\Azure\.switch\tests\nsz_solid_out C:\Users\Azure\.switch\tests\nsp
     failOnStderr: true
   displayName: 'Test NSP solid compression'
   
 - task: CmdLine@2
   inputs:
-    script: python nsz.py -C -B -V --keep -w -p -m 4 -t 4 -o C:\Users\Azure\.switch\tests\nsz_block_out C:\Users\Azure\.switch\tests\nsp
+    script: python nsz.py -C -B -V --keep -w -m 4 -t 4 -o C:\Users\Azure\.switch\tests\nsz_block_out C:\Users\Azure\.switch\tests\nsp
     failOnStderr: true
   displayName: 'Test NSP block compression'

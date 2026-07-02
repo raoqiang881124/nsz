@@ -1,0 +1,218 @@
+name: Build Release Binaries
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  build:
+    name: Build ${{ matrix.os-name }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            os-name: linux
+            arch: x64
+            artifact-name: nsz-cli-linux-x64
+          - os: ubuntu-22.04-arm
+            os-name: linux
+            arch: arm64
+            artifact-name: nsz-cli-linux-arm64
+          # The macos-x64 build cannot be made because GitHub
+          # retired the macos-13 image in December 2025.
+          - os: macos-15
+            os-name: macos
+            arch: arm64
+            artifact-name: nsz-cli-macos-arm64
+          - os: windows-2022
+            os-name: windows
+            arch: x64
+            artifact-name: nsz-cli-windows-x64
+          - os: windows-11-arm
+            os-name: windows
+            arch: arm64
+            artifact-name: nsz-cli-windows-arm64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pycryptodome zstandard enlighten
+
+      - name: Build with PyInstaller
+        run: pyinstaller --log-level WARN dev/nsz-cli.spec
+
+      - name: Rename binary (Linux / macOS)
+        if: runner.os != 'Windows'
+        run: mv dist/nsz ${{ matrix.artifact-name }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: mv dist/nsz.exe ${{ matrix.artifact-name }}.exe
+
+      - name: Upload artifact (Linux / macOS)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}.exe
+
+  build-gui:
+    name: Build GUI ${{ matrix.os-name }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            os-name: linux
+            arch: x64
+            artifact-name: nsz-gui-linux-x64
+          - os: ubuntu-22.04-arm
+            os-name: linux
+            arch: arm64
+            artifact-name: nsz-gui-linux-arm64
+          # The macos-x64 build cannot be made because GitHub
+          # retired the macos-13 image in December 2025.
+          - os: macos-15
+            os-name: macos
+            arch: arm64
+            artifact-name: nsz-gui-macos-arm64
+          - os: windows-2022
+            os-name: windows
+            arch: x64
+            artifact-name: nsz-gui-windows-x64
+          # windows-11-arm is excluded: Kivy's Windows build deps (e.g.
+          # kivy_deps.gstreamer_dev) only ship win32/win_amd64 wheels, so the
+          # GUI can't be built there with the current toolchain.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            xvfb \
+            libgl1 \
+            libegl1 \
+            libgles2 \
+            libmtdev1 \
+            libx11-6 \
+            libxext6 \
+            libxrender1 \
+            libxrandr2 \
+            libxfixes3 \
+            libxcursor1 \
+            libxi6 \
+            libxinerama1 \
+            libxxf86vm1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r dev/requirements-pyinstaller.txt
+
+      - name: Build with PyInstaller (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a pyinstaller --log-level WARN dev/nsz-gui.spec
+
+      - name: Build with PyInstaller (macOS)
+        if: runner.os == 'macOS'
+        run: pyinstaller --log-level WARN dev/nsz-gui.spec
+
+      - name: Build with PyInstaller (Windows)
+        if: runner.os == 'Windows'
+        run: pyinstaller --log-level WARN dev/nsz-gui.spec
+        env:
+          # The build process imports Kivy to collect hidden imports, which
+          # probes the GL window provider. GitHub's Windows runners only
+          # expose GDI software OpenGL 1.1, below Kivy's minimum of 2.0, so
+          # force ANGLE (DirectX-backed GLES) the same way the packaged app
+          # does at runtime (see configure_windows_gui_env in nsz/__init__.py).
+          KIVY_GL_BACKEND: angle_sdl2
+          KIVY_GRAPHICS: gles
+
+      - name: Rename binary (Linux / macOS)
+        if: runner.os != 'Windows'
+        run: mv dist/nsz-gui ${{ matrix.artifact-name }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: mv dist/nsz-gui.exe ${{ matrix.artifact-name }}.exe
+
+      - name: Upload artifact (Linux / macOS)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-name }}.exe
+
+  release:
+    name: Create GitHub Release
+    needs: [build, build-gui]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+
+      - name: Zip GUI artifacts
+        run: |
+          for dir in artifacts/nsz-gui-*; do
+            name=$(basename "$dir")
+            (cd "$dir" && zip -j "../../$name.zip" *)
+          done
+
+      - name: Collect release files
+        run: |
+          mkdir -p release
+          for dir in artifacts/nsz-cli-*; do
+            cp "$dir"/* release/
+          done
+          cp nsz-gui-*.zip release/
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: NSZ ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: release/*

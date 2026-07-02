@@ -5,7 +5,7 @@ TITLE Extract NSP/NSZ/XCI/XCZ
 SET "nszFilePath=%~dp0nsz.exe"
 
 :: Source directory path where to search for NSP/NSZ/XCI/XCZ files.
-SET "SrcDirectoryPath=C:\Nintendo Switch dumps"
+SET "SrcDirectoryPath=C:\dumps"
 
 :: Destination directory path where to extract NSP/NSZ/XCI/XCZ files.
 SET "DstDirectoryPath=%SrcDirectoryPath%"
