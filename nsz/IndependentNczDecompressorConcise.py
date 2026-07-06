@@ -4,10 +4,19 @@
 from sys import argv
 from pathlib import Path
 from hashlib import sha256
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
-from zstandard import ZstdDecompressor
 from nsz.nut import Print
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Util import Counter
+except ModuleNotFoundError as e:
+    try:
+        # System package managers like apt may install pycryptodome as "Cryptodome" instead of "Crypto"
+        from Cryptodome.Cipher import AES
+        from Cryptodome.Util import Counter
+    except ModuleNotFoundError:
+        Print.info("Error: Unable to find 'Crypto' or 'Cryptodome' modules. Please install pycryptodome pip package.")
+        raise e
+from zstandard import ZstdDecompressor
 
 
 def readInt8(f, byteorder="little", signed=False):
