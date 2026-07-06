@@ -135,7 +135,7 @@ def solidCompressTask(
                     )
                     continue
         except KeyboardInterrupt:
-            Print.info("Keyboard exception")
+            Print.info("Keyboard interrupt")
         except Keys.MissingKeyError as e:
             statusReport[id] = [0, 0, 1, "Failed"]
             problemQueue.put(
@@ -264,7 +264,9 @@ def _get_args():
         configure_windows_gui_env()
         configure_linux_gui_env()
         from nsz.gui.NSZ_GUI import launchGui
-    except ImportError:
+    except ImportError as e:
+        Print.info("Unable to load NSZ_GUI: {0}".format(str(e)))
+        Print.info("Proceeding in CLI mode.")
         ParseArguments.parse(args=["-h"])
         return None
     args = launchGui()
@@ -786,11 +788,13 @@ def main():
     except SystemExit:
         raise
     except KeyboardInterrupt:
-        Print.info("Keyboard exception")
+        Print.info("Keyboard interrupt.")
     except Keys.MissingKeyError:
+        # Print is handled in Keys.py
         sys.exit(1)
     except BaseException as e:
-        Print.info("nut exception {0}".format(str(e)))
+        Print.info("NUT exception.")
+        # Stack trace is printed in nsz.py
         raise
     finally:
         Print.stopHeartbeat()

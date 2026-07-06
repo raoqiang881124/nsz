@@ -6,6 +6,7 @@
 if __name__ == "__main__":
     import sys
     import pathlib
+    from traceback import print_exc
 
     if sys.hexversion < 0x03060000:
         raise ImportError(
@@ -24,5 +25,5 @@ if __name__ == "__main__":
     try:
         nsz.main()
     except Exception as e:
-        print(f"Error: {e}")
+        print_exc()
         sys.exit(1)

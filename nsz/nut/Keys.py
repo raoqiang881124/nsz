@@ -239,6 +239,9 @@ def load(fileName):
                     aes_key_generation_source,
                 )
                 loaded_keys_revisions.append("master_key_{0:02x}".format(i))
+            except MissingKeyError as e:
+                # Print is handled in getKey
+                incorrect_keys_revisions.append("master_key_{0:02x}".format(i))
             except Exception as e:
                 Print.error(703, str(e))
                 incorrect_keys_revisions.append("master_key_{0:02x}".format(i))
@@ -254,7 +257,6 @@ def load(fileName):
 
     except BaseException as e:
         Print.error(702, format_exc())
-        Print.error(702, str(e))
 
         keys_loaded = False
         return keys_loaded
