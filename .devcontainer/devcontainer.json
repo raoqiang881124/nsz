@@ -5,6 +5,7 @@
     "context": ".."
   },
   "workspaceFolder": "/workspaces/nsz",
+  "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
   "remoteUser": "vscode",
   "remoteEnv": {
     "PATH": "/opt/venv-linux/bin:${containerEnv:PATH}"
