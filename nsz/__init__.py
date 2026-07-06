@@ -312,9 +312,9 @@ def _resolve_output_folder(args):
 
 
 def _print_banner():
-    majorMinorVersion = ".".join(VERSION.split(".")[:2])
+    leadingPadding = max(0, 13 - max(0, len(VERSION) - 3))
     Print.silly("")
-    Print.silly("             NSZ v{0}   ,;:;;,".format(majorMinorVersion))
+    Print.silly("{0}NSZ v{1}   ,;:;;,".format(" " * leadingPadding, VERSION))
     Print.silly("                       ;;;;;")
     Print.silly("               .=',    ;:;;:,")
     Print.silly("              /_', \"=. ';:;:;")
