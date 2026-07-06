@@ -171,13 +171,13 @@ class BaseFs(File):
         self.cryptoOffset = 0
         self.ctr_val = 0
         """
-		if self.bktrRelocation:
-			entry = self.bktrRelocation.getRelocationEntry(self.tell())
+        if self.bktrRelocation:
+            entry = self.bktrRelocation.getRelocationEntry(self.tell())
 
-			if entry:
-				self.ctr_val = entry.ctr
-				#self.cryptoOffset = entry.virtualOffset + entry.physicalOffset
-		"""
+            if entry:
+                self.ctr_val = entry.ctr
+                #self.cryptoOffset = entry.virtualOffset + entry.physicalOffset
+        """
         if self.bktrSubsection is not None:
             entries = self.bktrSubsection.getEntries(self.tell(), size)
             # Print.info('offset = %x' % self.tell())

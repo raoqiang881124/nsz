@@ -56,9 +56,9 @@ class Rom(BaseFs):
                     Print.info("%sLevel%d blockSize = %d" % (tabs, i, level.blockSize))
 
         """
-		self.seek(0)
-		level1 = self.read(0x4000)
-		Print.info('%ssha = %s' % (tabs, sha256(level1).hexdigest()))
-		Hex.dump(level1)
-		"""
+        self.seek(0)
+        level1 = self.read(0x4000)
+        Print.info('%ssha = %s' % (tabs, sha256(level1).hexdigest()))
+        Hex.dump(level1)
+        """
         super(Rom, self).printInfo(maxDepth, indent)
