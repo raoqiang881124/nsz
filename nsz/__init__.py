@@ -148,7 +148,7 @@ def solidCompressTask(
             pleaseKillYourself.increment()
             break
         except BaseException as e:
-            Print.info("nut exception: {0}".format(str(e)))
+            Print.info("NUT exception: {0}".format(str(e)))
             statusReport[id] = [0, 0, 1, "Failed"]
             problemQueue.put(
                 {
@@ -298,9 +298,7 @@ def _resolve_output_folder(args):
         return None, True
 
     argOutFolderToParse = args.output
-    if not argOutFolderToParse.endswith("/") and not argOutFolderToParse.endswith(
-        "\\"
-    ):
+    if not argOutFolderToParse.endswith("/") and not argOutFolderToParse.endswith("\\"):
         argOutFolderToParse += "/"
     if not Path(argOutFolderToParse).is_dir():
         Print.error(
@@ -678,13 +676,9 @@ def _report_errors():
         errors = []
         for e in err:
             if isinstance(e, VerificationFailed):
-                errors.append(
-                    {"filename": str(e.in_file), "message": str(e.exception)}
-                )
+                errors.append({"filename": str(e.in_file), "message": str(e.exception)})
             else:
-                errors.append(
-                    {"filename": str(e["filename"]), "message": e["error"]}
-                )
+                errors.append({"filename": str(e["filename"]), "message": e["error"]})
         Print.summary(errors)
         return 1 if err else 0
 

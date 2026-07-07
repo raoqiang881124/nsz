@@ -498,30 +498,35 @@ class Nacp(File):
                     "  Language: "
                     + str(NacpLanguageType(i)).replace("NacpLanguageType.", "")
                 )
-                Print.info("  Name: " + self.getName(i))
-                Print.info("  Publisher: " + self.getPublisher(i))
+                Print.info("  Name = {0}".format(self.getName(i)))
+                Print.info("  Publisher = {0}".format(self.getPublisher(i)))
 
         if str(self.getIsbn()) == "":
             pass
         else:
-            Print.info("Isbn: " + str(self.getIsbn()))
+            Print.info("Isbn = {0}".format(str(self.getIsbn())))
 
         Print.info(
-            "AddOnContentRegistrationType: "
-            + str(self.getAddOnContentRegistrationType())
+            "AddOnContentRegistrationType = {0}".format(
+                str(self.getAddOnContentRegistrationType())
+            )
         )
-        Print.info("StartupUserAccount: " + str(self.getStartupUserAccount()))
-        Print.info("UserAccountSwitchLock: " + str(self.getUserAccountSwitchLock()))
-        Print.info("Attribute: " + str(self.getAttribute()))
-        Print.info("ParentalControl: " + str(self.getParentalControl()))
-        Print.info("Screenshot: " + str(self.getScreenshot()))
-        Print.info("VideoCapture: " + str(self.getVideoCapture()))
-        Print.info("DataLossConfirmation: " + str(self.getDataLossConfirmation()))
-        Print.info("PlayLogPolicy: " + str(self.getPlayLogPolicy()))
+        Print.info("StartupUserAccount = {0}".format(str(self.getStartupUserAccount())))
         Print.info(
-            "PresenceGroupId: "
-            + "0x"
-            + hex(self.getPresenceGroupId()).replace("0x", "").zfill(16)
+            "UserAccountSwitchLock = {0}".format(str(self.getUserAccountSwitchLock()))
+        )
+        Print.info("Attribute = {0}".format(str(self.getAttribute())))
+        Print.info("ParentalControl = {0}".format(str(self.getParentalControl())))
+        Print.info("Screenshot = {0}".format(str(self.getScreenshot())))
+        Print.info("VideoCapture = {0}".format(str(self.getVideoCapture())))
+        Print.info(
+            "DataLossConfirmation = {0}".format(str(self.getDataLossConfirmation()))
+        )
+        Print.info("PlayLogPolicy = {0}".format(str(self.getPlayLogPolicy())))
+        Print.info(
+            "PresenceGroupId = 0x{0}".format(
+                hex(self.getPresenceGroupId()).replace("0x", "").zfill(16)
+            )
         )
 
         for i in range(12):
@@ -533,38 +538,40 @@ class Nacp(File):
                     "  Organization: "
                     + str(OrganizationType(i)).replace("OrganizationType.", "")
                 )
-                Print.info("  Age: " + str(self.getRatingAge(i)))
+                Print.info("  Age = {0}".format(str(self.getRatingAge(i))))
 
-        Print.info("DisplayVersion: " + str(self.getDisplayVersion()))
+        Print.info("DisplayVersion = {0}".format(str(self.getDisplayVersion())))
         Print.info(
-            "AddOnContentBaseId: "
-            + "0x"
-            + hex(self.getAddOnContentBaseId()).replace("0x", "").zfill(16)
+            "AddOnContentBaseId = 0x{0}".format(
+                hex(self.getAddOnContentBaseId()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "SaveDataOwnerId: "
-            + "0x"
-            + hex(self.getSaveDataOwnerId()).replace("0x", "").zfill(16)
+            "SaveDataOwnerId = 0x{0}".format(
+                hex(self.getSaveDataOwnerId()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "UserAccountSaveDataSize: "
-            + "0x"
-            + hex(self.getUserAccountSaveDataSize()).replace("0x", "").zfill(16)
+            "UserAccountSaveDataSize = 0x{0}".format(
+                hex(self.getUserAccountSaveDataSize()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "UserAccountSaveDataJournalSize: "
-            + "0x"
-            + hex(self.getUserAccountSaveDataJournalSize()).replace("0x", "").zfill(16)
+            "UserAccountSaveDataJournalSize = 0x{0}".format(
+                hex(self.getUserAccountSaveDataJournalSize())
+                .replace("0x", "")
+                .zfill(16)
+            )
         )
         Print.info(
-            "DeviceSaveDataSize: "
-            + "0x"
-            + hex(self.getDeviceSaveDataSize()).replace("0x", "").zfill(16)
+            "DeviceSaveDataSize = 0x{0}".format(
+                hex(self.getDeviceSaveDataSize()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "DeviceSaveDataJournalSize: "
-            + "0x"
-            + hex(self.getDeviceSaveDataJournalSize()).replace("0x", "").zfill(16)
+            "DeviceSaveDataJournalSize = 0x{0}".format(
+                hex(self.getDeviceSaveDataJournalSize()).replace("0x", "").zfill(16)
+            )
         )
 
         if (
@@ -574,37 +581,39 @@ class Nacp(File):
             pass
         else:
             Print.info(
-                "BcatDeliveryCacheStorageSize: "
-                + "0x"
-                + hex(self.getBcatDeliveryCacheStorageSize())
-                .replace("0x", "")
-                .zfill(16)
+                "BcatDeliveryCacheStorageSize = 0x{0}".format(
+                    hex(self.getBcatDeliveryCacheStorageSize())
+                    .replace("0x", "")
+                    .zfill(16)
+                )
             )
 
         if str(self.getApplicationErrorCodeCategory()) == "":
             pass
         else:
             Print.info(
-                "ApplicationErrorCodeCategory: "
+                "ApplicationErrorCodeCategory = "
                 + str(self.getApplicationErrorCodeCategory())
             )
 
         Print.info(
-            "LocalCommunicationId: "
-            + "0x"
-            + hex(self.getLocalCommunicationId()).replace("0x", "").zfill(16)
+            "LocalCommunicationId = 0x{0}".format(
+                hex(self.getLocalCommunicationId()).replace("0x", "").zfill(16)
+            )
         )
-        Print.info("LogoType: " + str(self.getLogoType()))
-        Print.info("LogoHandling: " + str(self.getLogoHandling()))
+        Print.info("LogoType = " + str(self.getLogoType()))
+        Print.info("LogoHandling = " + str(self.getLogoHandling()))
         Print.info(
-            "RuntimeAddOnContentInstall: " + str(self.getRuntimeAddOnContentInstall())
+            "RuntimeAddOnContentInstall = {0}".format(
+                str(self.getRuntimeAddOnContentInstall())
+            )
         )
-        Print.info("CrashReport: " + str(self.getCrashReport()))
-        Print.info("Hdcp: " + str(self.getHdcp()))
+        Print.info("CrashReport = " + str(self.getCrashReport()))
+        Print.info("Hdcp = " + str(self.getHdcp()))
         Print.info(
-            "SeedForPseudoDeviceId: "
-            + "0x"
-            + hex(self.getSeedForPseudoDeviceId()).replace("0x", "").zfill(16)
+            "SeedForPseudoDeviceId = 0x{0}".format(
+                hex(self.getSeedForPseudoDeviceId()).replace("0x", "").zfill(16)
+            )
         )
 
         if (
@@ -615,66 +624,74 @@ class Nacp(File):
         elif str(self.getBcatPassphrase()) == "":
             pass
         else:
-            Print.info("BcatPassphrase: " + str(self.getBcatPassphrase()))
+            Print.info("BcatPassphrase = {0}".format(str(self.getBcatPassphrase())))
 
         Print.info(
-            "UserAccountSaveDataSizeMax: "
-            + "0x"
-            + hex(self.getUserAccountSaveDataSizeMax()).replace("0x", "").zfill(16)
+            "UserAccountSaveDataSizeMax = 0x{0}".format(
+                hex(self.getUserAccountSaveDataSizeMax()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "UserAccountSaveDataJournalSizeMax: "
-            + "0x"
-            + hex(self.getUserAccountSaveDataJournalSizeMax())
-            .replace("0x", "")
-            .zfill(16)
+            "UserAccountSaveDataJournalSizeMax = 0x{0}".format(
+                hex(self.getUserAccountSaveDataJournalSizeMax())
+                .replace("0x", "")
+                .zfill(16)
+            )
         )
         Print.info(
-            "DeviceSaveDataSizeMax: "
-            + "0x"
-            + hex(self.getDeviceSaveDataSizeMax()).replace("0x", "").zfill(16)
+            "DeviceSaveDataSizeMax = 0x{0}".format(
+                hex(self.getDeviceSaveDataSizeMax()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "DeviceSaveDataJournalSizeMax: "
-            + "0x"
-            + hex(self.getDeviceSaveDataJournalSizeMax()).replace("0x", "").zfill(16)
+            "DeviceSaveDataJournalSizeMax = 0x{0}".format(
+                hex(self.getDeviceSaveDataJournalSizeMax()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "TemporaryStorageSize: "
-            + "0x"
-            + hex(self.getTemporaryStorageSize()).replace("0x", "").zfill(16)
+            "TemporaryStorageSize = 0x{0}".format(
+                hex(self.getTemporaryStorageSize()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "CacheStorageSize: "
-            + "0x"
-            + hex(self.getCacheStorageSize()).replace("0x", "").zfill(16)
+            "CacheStorageSize = 0x{0}".format(
+                hex(self.getCacheStorageSize()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "CacheStorageJournalSize: "
-            + "0x"
-            + hex(self.getCacheStorageJournalSize()).replace("0x", "").zfill(16)
+            "CacheStorageJournalSize = 0x{0}".format(
+                hex(self.getCacheStorageJournalSize()).replace("0x", "").zfill(16)
+            )
         )
         Print.info(
-            "CacheStorageDataAndJournalSizeMax: "
-            + "0x"
-            + hex(self.getCacheStorageDataAndJournalSizeMax())
-            .replace("0x", "")
-            .zfill(8)
+            "CacheStorageDataAndJournalSizeMax = 0x{0}".format(
+                hex(self.getCacheStorageDataAndJournalSizeMax())
+                .replace("0x", "")
+                .zfill(8)
+            )
         )
         Print.info(
-            "CacheStorageIndexMax: "
-            + "0x"
-            + hex(self.getCacheStorageIndexMax()).replace("0x", "").zfill(4)
+            "CacheStorageIndexMax = 0x{0}".format(
+                hex(self.getCacheStorageIndexMax()).replace("0x", "").zfill(4)
+            )
         )
         Print.info(
-            "PlayLogQueryableApplicationId: "
-            + "0x"
-            + hex(self.getPlayLogQueryableApplicationId()).replace("0x", "").zfill(16)
+            "PlayLogQueryableApplicationId = 0x{0}".format(
+                hex(self.getPlayLogQueryableApplicationId()).replace("0x", "").zfill(16)
+            )
         )
-        Print.info("PlayLogQueryCapability: " + str(self.getPlayLogQueryCapability()))
-        Print.info("Repair: " + str(self.getRepair()))
-        Print.info("ProgramIndex: " + str(self.getProgramIndex()))
         Print.info(
-            "RequiredNetworkServiceLicenseOnLaunch: "
-            + str(self.getRequiredNetworkServiceLicenseOnLaunch())
+            "PlayLogQueryableApplicationId = 0x{0}".format(
+                hex(self.getPlayLogQueryableApplicationId()).replace("0x", "").zfill(16)
+            )
+        )
+        Print.info(
+            "PlayLogQueryCapability = {0}".format(str(self.getPlayLogQueryCapability()))
+        )
+        Print.info("Repair = {0}".format(str(self.getRepair())))
+        Print.info("ProgramIndex = {0}".format(str(self.getProgramIndex())))
+        Print.info(
+            "RequiredNetworkServiceLicenseOnLaunch = {0}".format(
+                str(self.getRequiredNetworkServiceLicenseOnLaunch())
+            )
         )

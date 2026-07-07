@@ -22,7 +22,7 @@ def extractTitlekeys(argsFile):
             ticket = f.ticket()
             if ticket is None:
                 # This ticket conditional was added to prevent the following exception from occurring when parsing a ticketless dump file:
-                # nut exception: 'NoneType' object has no attribute 'getRightsId'
+                # NUT exception: 'NoneType' object has no attribute 'getRightsId'
                 Print.info("Skipped ticketless {0}".format(filePath.stem))
             else:
                 rightsId = format(ticket.getRightsId(), "x").zfill(32)

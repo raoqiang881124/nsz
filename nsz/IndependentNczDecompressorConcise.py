@@ -135,7 +135,7 @@ def __decompressNcz(nspf, f):
 
 if __name__ == "__main__":
     if len(argv) < 3:
-        Print.info("usage: decompress.py input.ncz output.nca")
+        Print.info("Usage: decompress.py input.ncz output.nca")
         exit(1)
     hexHash = __decompressNcz(open(argv[1], "rb"), open(argv[2], "wb"))
     fileNameHash = Path(argv[1]).stem.lower()

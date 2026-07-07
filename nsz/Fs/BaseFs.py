@@ -157,7 +157,7 @@ class BaseFs(File):
                     MemoryFile(self.bktr1Buffer), "rb", nca=self
                 )
             except BaseException as e:
-                Print.info("bktr reloc exception: " + str(e))
+                Print.info("bktr reloc exception: {0}".format(str(e)))
 
         if self.bktr2Buffer:
             try:
@@ -165,7 +165,7 @@ class BaseFs(File):
                     MemoryFile(self.bktr2Buffer), "rb", nca=self
                 )
             except BaseException as e:
-                Print.info("bktr subsection exception: " + str(e))
+                Print.info("bktr subsection exception: {0}".format(str(e)))
 
     def bktrRead(self, size=None, direct=False):
         self.cryptoOffset = 0

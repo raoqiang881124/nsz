@@ -181,7 +181,7 @@ def __decompressContainer(
                 hashHexdigest = hash.hexdigest()
                 if hasattr(nspf.f, "ticketless"):
                     # This ticket conditional was added to prevent the following exception from occurring when processing a ticketless dump file:
-                    # nut exception: Verification detected hash mismatch
+                    # NUT exception: Verification detected hash mismatch
                     Print.info(
                         "{0}".format(nspf._path),
                         "TICKETLESS",
@@ -236,7 +236,7 @@ def __decompressContainer(
             )
         if hasattr(nspf.f, "ticketless"):
             # This ticket conditional was added to prevent the following exception from occurring when processing a ticketless dump file:
-            # nut exception: Verification detected hash mismatch
+            # NUT exception: Verification detected hash mismatch
             Print.info(
                 "{0}".format(nspf._path), "TICKETLESS", pleaseNoPrint=pleaseNoPrint
             )

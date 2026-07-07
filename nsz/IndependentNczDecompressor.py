@@ -20,7 +20,7 @@ from zstandard import ZstdDecompressor
 from nsz import BlockDecompressorReader
 
 if len(argv) < 3:
-    Print.info("usage: decompress.py input.ncz output.nca")
+    Print.info("Usage: decompress.py input.ncz output.nca")
 
 
 def readInt8(f, byteorder="little", signed=False):

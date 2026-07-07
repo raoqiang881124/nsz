@@ -115,8 +115,8 @@ class BktrBucket:
     def printInfo(self, maxDepth=3, indent=0):
         tabs = "\t" * indent
         Print.info("\n%sBKTR Bucket" % tabs)
-        Print.info("%sentries: %d" % (tabs, self.entryCount))
-        Print.info("%send offset: %d" % (tabs, self.endOffset))
+        Print.info("%sentries = %d" % (tabs, self.entryCount))
+        Print.info("%send offset = %d" % (tabs, self.endOffset))
 
         for entry in self.entries:
             entry.printInfo(maxDepth, indent + 1)
