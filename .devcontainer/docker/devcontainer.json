@@ -1,8 +1,8 @@
 {
-  "name": "nsz-binary-build",
+  "name": "nsz-binary-build_docker",
   "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
+    "dockerfile": "../Dockerfile",
+    "context": "../.."
   },
   "workspaceFolder": "/workspaces/nsz",
   "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",

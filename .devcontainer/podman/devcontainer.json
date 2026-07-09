@@ -1,0 +1,26 @@
+{
+  "name": "nsz-binary-build_podman",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": "../.."
+  },
+  "workspaceFolder": "/workspaces/nsz",
+  "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind,Z",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": false,
+  "runArgs": [
+    "--userns=keep-id:uid=1000,gid=1000"
+  ],
+  "remoteEnv": {
+    "PATH": "/opt/venv-linux/bin:${containerEnv:PATH}"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "ms-python.python",
+        "streetsidesoftware.code-spell-checker"
+      ]
+    }
+  }
+}
