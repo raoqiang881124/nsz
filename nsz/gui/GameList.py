@@ -141,7 +141,8 @@ class GameList(StackLayout):
                             )
                             if extractedIdVersion is None:
                                 Print.error(
-                                    f'Failed to extract TitleID/Version from filename "{Path(filepathStr).name}"'
+                                    1000,
+                                    'Failed to extract TitleID/Version from filename "{0}"'.format(Path(filepathStr).name)
                                 )
                                 extractedIdVersion = ("None", 0)
                             (titleIDExtracted, versionExtracted) = extractedIdVersion
@@ -164,7 +165,8 @@ class GameList(StackLayout):
                         )
                         if extractedIdVersion is None:
                             Print.error(
-                                f'Failed to extract TitleID/Version from filename "{Path(fullPath).name}"'
+                                1000,
+                                'Failed to extract TitleID/Version from filename "{0}"'.format(path.name)
                             )
                             extractedIdVersion = ("None", 0)
                         (titleIDExtracted, versionExtracted) = extractedIdVersion
@@ -181,6 +183,7 @@ class GameList(StackLayout):
                 Print.warning("Warning: {0} isn't a file or folder!".format(fullPath))
         except BaseException as e:
             Print.error(
+                1001,
                 "Error while adding {0} to gamelist: {1}".format(fullPath, str(e))
             )
             Print.exception()

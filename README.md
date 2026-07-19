@@ -2,7 +2,7 @@
 
 # NSZ
 
-A compression/decompresson script (with optional GUI) that compresses or decompresses Nintendo Switch dumps losslessly thanks to the [zstd](https://github.com/facebook/zstd) compression algorithm. The compressed file can be installed with supported NSW Homebrew Title Installers.
+A compression/decompression script (with optional GUI) that compresses or decompresses Nintendo Switch dumps losslessly thanks to the [zstd](https://github.com/facebook/zstd) compression algorithm. The compressed file can be installed with supported NSW Homebrew Title Installers.
 
 ## Legal
 
@@ -45,7 +45,7 @@ Requires [Python 3.6+](https://www.python.org/downloads).
 
 This tool can be run from the [source code](https://github.com/nicoboss/nsz/archive/refs/heads/master.zip).
 
-1. Run `pip3 install -r requirements.txt` to install the requirements or `pip3 install -r requirements-gui.txt` to install the requirements for the GUI.
+1. Run `pip3 install -r requirements.txt` to install the requirements for the CLI only, or `pip3 install -r requirements-gui.txt` to install the requirements for the CLI and GUI.
 2. Run `python3 nsz.py` to start the program.
 
 ### PIP Package

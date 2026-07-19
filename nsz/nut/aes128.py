@@ -1,7 +1,17 @@
 from typing import List, Optional, Tuple
+from nsz.nut import Print
 
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Util import Counter
+except ModuleNotFoundError as e:
+    try:
+        # System package managers like apt may install pycryptodome as "Cryptodome" instead of "Crypto"
+        from Cryptodome.Cipher import AES
+        from Cryptodome.Util import Counter
+    except ModuleNotFoundError:
+        Print.info("Error: Unable to find 'Crypto' or 'Cryptodome' modules. Please install pycryptodome pip package.")
+        raise e
 
 BLOCK_SIZE = 0x10
 

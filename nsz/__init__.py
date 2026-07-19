@@ -135,7 +135,7 @@ def solidCompressTask(
                     )
                     continue
         except KeyboardInterrupt:
-            Print.info("Keyboard exception")
+            Print.info("Keyboard interrupt")
         except Keys.MissingKeyError as e:
             statusReport[id] = [0, 0, 1, "Failed"]
             problemQueue.put(
@@ -148,7 +148,7 @@ def solidCompressTask(
             pleaseKillYourself.increment()
             break
         except BaseException as e:
-            Print.info("nut exception: {0}".format(str(e)))
+            Print.info("NUT exception: {0}".format(str(e)))
             statusReport[id] = [0, 0, 1, "Failed"]
             problemQueue.put(
                 {
@@ -158,7 +158,7 @@ def solidCompressTask(
             )
 
 
-def compress(filePath, outputDir, args, work, amountOfTastkQueued):
+def compress(filePath, outputDir, args, work, amountOfTaskQueued):
     compressionLevel = 18 if args.level is None else args.level
 
     if filePath.suffix == ".xci" and not args.solid or args.block:
@@ -206,7 +206,7 @@ def compress(filePath, outputDir, args, work, amountOfTastkQueued):
                 args.quick_verify,
             ]
         )
-        amountOfTastkQueued.increment()
+        amountOfTaskQueued.increment()
 
 
 err = []
@@ -264,7 +264,9 @@ def _get_args():
         configure_windows_gui_env()
         configure_linux_gui_env()
         from nsz.gui.NSZ_GUI import launchGui
-    except ImportError:
+    except ImportError as e:
+        Print.info("Unable to load NSZ_GUI: {0}".format(str(e)))
+        Print.info("Proceeding in CLI mode.")
         ParseArguments.parse(args=["-h"])
         return None
     args = launchGui()
@@ -295,24 +297,22 @@ def _resolve_output_folder(args):
     if not args.output:
         return None, True
 
-    argOutFolderToPharse = args.output
-    if not argOutFolderToPharse.endswith("/") and not argOutFolderToPharse.endswith(
-        "\\"
-    ):
-        argOutFolderToPharse += "/"
-    if not Path(argOutFolderToPharse).is_dir():
+    argOutFolderToParse = args.output
+    if not argOutFolderToParse.endswith("/") and not argOutFolderToParse.endswith("\\"):
+        argOutFolderToParse += "/"
+    if not Path(argOutFolderToParse).is_dir():
         Print.error(
             103,
             'Error: Output directory "{0}" does not exist!'.format(args.output),
         )
         return None, False
-    return Path(argOutFolderToPharse).resolve(), True
+    return Path(argOutFolderToParse).resolve(), True
 
 
 def _print_banner():
-    majorMinorVersion = ".".join(VERSION.split(".")[:2])
+    leadingPadding = max(0, 13 - max(0, len(VERSION) - 3))
     Print.silly("")
-    Print.silly("             NSZ v{0}   ,;:;;,".format(majorMinorVersion))
+    Print.silly("{0}NSZ v{1}   ,;:;;,".format(" " * leadingPadding, VERSION))
     Print.silly("                       ;;;;;")
     Print.silly("               .=',    ;:;;:,")
     Print.silly("              /_', \"=. ';:;:;")
@@ -368,7 +368,7 @@ def _adjust_compression_verify_flags(args):
 
 
 def _queue_compression_jobs(
-    args, argOutFolder, work, amountOfTastkQueued, targetDictNsz, targetDictXcz
+    args, argOutFolder, work, amountOfTaskQueued, targetDictNsz, targetDictXcz
 ):
     """Queues compression jobs and returns the list of source files to delete afterwards."""
     _adjust_compression_verify_flags(args)
@@ -397,7 +397,7 @@ def _queue_compression_jobs(
                         filePath, ".xcz", targetDictXcz[outFolder], args
                     ):
                         continue
-                compress(filePath, outFolder, args, work, amountOfTastkQueued)
+                compress(filePath, outFolder, args, work, amountOfTaskQueued)
                 if args.rm_source:
                     sourceFileToDelete.append(filePath)
             except KeyboardInterrupt:
@@ -522,12 +522,12 @@ def _run_compression(
     pleaseNoPrint,
     pleaseKillYourself,
     problems,
-    amountOfTastkQueued,
+    amountOfTaskQueued,
     barManager,
 ):
     BAR_FMT = "{desc}{desc_pad}{percentage:3.0f}%|{bar}| {count:{len_total}d}/{total:d} {unit} [{elapsed}<{eta}, {rate:.2f}{unit_pad}{unit}/s]"
     WRITTEN_FMT = "{desc}{desc_pad}{count:.2j}B [{elapsed}, {rate:.2j}B/s]"
-    parallelTasks = min(args.multi, amountOfTastkQueued.value())
+    parallelTasks = min(args.multi, amountOfTaskQueued.value())
     if parallelTasks < 0:
         parallelTasks = 4
 
@@ -549,7 +549,7 @@ def _run_compression(
             barManager, parallelTasks, BAR_FMT, WRITTEN_FMT
         )
 
-    # Ensures that all threads are started and compleaded before being requested to quit
+    # Ensures that all threads are started and completed before being requested to quit
     while readyForWork.value() < parallelTasks:
         sleep(0.2)
         if pleaseNoPrint.value() > 0:
@@ -676,13 +676,9 @@ def _report_errors():
         errors = []
         for e in err:
             if isinstance(e, VerificationFailed):
-                errors.append(
-                    {"filename": str(e.in_file), "message": str(e.exception)}
-                )
+                errors.append({"filename": str(e.in_file), "message": str(e.exception)})
             else:
-                errors.append(
-                    {"filename": str(e["filename"]), "message": e["error"]}
-                )
+                errors.append({"filename": str(e["filename"]), "message": e["error"]})
         Print.summary(errors)
         return 1 if err else 0
 
@@ -731,7 +727,7 @@ def main():
         pleaseKillYourself = Counter(poolManager, 0)
         work = poolManager.Queue()
         problems = poolManager.Queue()
-        amountOfTastkQueued = Counter(poolManager, 0)
+        amountOfTaskQueued = Counter(poolManager, 0)
         targetDictNsz = dict()
         targetDictXcz = dict()
 
@@ -757,7 +753,7 @@ def main():
                 args,
                 argOutFolder,
                 work,
-                amountOfTastkQueued,
+                amountOfTaskQueued,
                 targetDictNsz,
                 targetDictXcz,
             )
@@ -769,7 +765,7 @@ def main():
                 pleaseNoPrint,
                 pleaseKillYourself,
                 problems,
-                amountOfTastkQueued,
+                amountOfTaskQueued,
                 barManager,
             )
             _delete_source_files(sourceFileToDelete, argOutFolder)
@@ -786,11 +782,13 @@ def main():
     except SystemExit:
         raise
     except KeyboardInterrupt:
-        Print.info("Keyboard exception")
+        Print.info("Keyboard interrupt.")
     except Keys.MissingKeyError:
+        # Print is handled in Keys.py
         sys.exit(1)
     except BaseException as e:
-        Print.info("nut exception {0}".format(str(e)))
+        Print.info("NUT exception.")
+        # Stack trace is printed in nsz.py
         raise
     finally:
         Print.stopHeartbeat()

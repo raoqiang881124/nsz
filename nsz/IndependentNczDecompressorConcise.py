@@ -4,10 +4,19 @@
 from sys import argv
 from pathlib import Path
 from hashlib import sha256
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
-from zstandard import ZstdDecompressor
 from nsz.nut import Print
+try:
+    from Crypto.Cipher import AES
+    from Crypto.Util import Counter
+except ModuleNotFoundError as e:
+    try:
+        # System package managers like apt may install pycryptodome as "Cryptodome" instead of "Crypto"
+        from Cryptodome.Cipher import AES
+        from Cryptodome.Util import Counter
+    except ModuleNotFoundError:
+        Print.info("Error: Unable to find 'Crypto' or 'Cryptodome' modules. Please install pycryptodome pip package.")
+        raise e
+from zstandard import ZstdDecompressor
 
 
 def readInt8(f, byteorder="little", signed=False):
@@ -126,7 +135,7 @@ def __decompressNcz(nspf, f):
 
 if __name__ == "__main__":
     if len(argv) < 3:
-        Print.info("usage: decompress.py input.ncz output.nca")
+        Print.info("Usage: decompress.py input.ncz output.nca")
         exit(1)
     hexHash = __decompressNcz(open(argv[1], "rb"), open(argv[2], "wb"))
     fileNameHash = Path(argv[1]).stem.lower()
@@ -134,7 +143,8 @@ if __name__ == "__main__":
         Print.info("{0}".format(Path(argv[2]).name), "VERIFIED")
     else:
         Print.error(
-            "[MISMATCH]   Filename startes with {0} but {1} was expected - hash verified failed!".format(
+            900,
+            "[MISMATCH]   Filename starts with {0} but {1} was expected - hash verified failed!".format(
                 fileNameHash, hexHash[:32]
             )
         )

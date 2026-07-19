@@ -80,5 +80,5 @@ class Cnmt(File):
         Print.info("%stitleType = %x" % (tabs, self.titleType))
 
         for i in self.contentEntries:
-            Print.info("%s\tncaId: %s  type = %x" % (tabs, i.ncaId, i.type))
+            Print.info("%s\tncaId = %s,  type = %x" % (tabs, i.ncaId, i.type))
         super(Cnmt, self).printInfo(maxDepth, indent)

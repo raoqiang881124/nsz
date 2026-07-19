@@ -37,3 +37,4 @@ A very big thank you to SciresM for his hardware crypto functions; the blazing f
 <a href="https://github.com/pR0Ps"><img src="https://github.com/pR0Ps.png?size=50" width="50" height="50" alt="pR0Ps"></a>
 <a href="https://github.com/clearmist"><img src="https://github.com/clearmist.png?size=50" width="50" height="50" alt="clearmist"></a>
 <a href="https://github.com/jparrill"><img src="https://github.com/jparrill.png?size=50" width="50" height="50" alt="jparrill"></a>
+<a href="https://github.com/Brycey92"><img src="https://github.com/Brycey92.png?size=50" width="50" height="50" alt="Brycey92"></a>

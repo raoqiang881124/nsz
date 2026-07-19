@@ -29,6 +29,15 @@
       "problemMatcher": []
     },
     {
+      "label": "Clean",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "${workspaceFolder}/scripts/clean.sh"
+      ],
+      "problemMatcher": []
+    },
+    {
       "label": "Build All",
       "dependsOn": [
         "Build Linux",

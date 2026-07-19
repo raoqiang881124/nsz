@@ -65,7 +65,7 @@ class Nsp(Pfs0):
         split = line.split("|")
         for i, value in enumerate(split):
             if i >= len(map):
-                Print.info("invalid map index: " + str(i) + ", " + str(len(map)))
+                Print.info("Invalid map index: {0}, {1}".format(str(i), str(len(map))))
                 continue
 
             i = str(map[i])

@@ -21,7 +21,7 @@ class Header(File):
         self.bktr_size = 0
         self.magic = None
         self.version = None
-        self.enctryCount = 0
+        self.entryCount = 0
         self.reserved = None
         self.buffer = None
         super(Header, self).__init__(path, mode, cryptoType, cryptoKey, cryptoCounter)
@@ -44,7 +44,7 @@ class Header(File):
         self.bktr_size = self.readInt64()
         self.magic = self.read(0x4)
         self.version = self.readInt32()
-        self.enctryCount = self.readInt32()
+        self.entryCount = self.readInt32()
         self.reserved = self.readInt32()
 
     def printInfo(self, maxDepth=3, indent=0):
@@ -55,7 +55,7 @@ class Header(File):
         Print.info("\n%sBKTR" % (tabs))
         Print.info("%soffset = %d" % (tabs, self.bktr_offset))
         Print.info("%ssize = %d" % (tabs, self.bktr_size))
-        Print.info("%sentry count = %d" % (tabs, self.enctryCount))
+        Print.info("%sentry count = %d" % (tabs, self.entryCount))
 
         Print.info("\n")
 
@@ -115,8 +115,8 @@ class BktrBucket:
     def printInfo(self, maxDepth=3, indent=0):
         tabs = "\t" * indent
         Print.info("\n%sBKTR Bucket" % tabs)
-        Print.info("%sentries: %d" % (tabs, self.entryCount))
-        Print.info("%send offset: %d" % (tabs, self.endOffset))
+        Print.info("%sentries = %d" % (tabs, self.entryCount))
+        Print.info("%send offset = %d" % (tabs, self.endOffset))
 
         for entry in self.entries:
             entry.printInfo(maxDepth, indent + 1)

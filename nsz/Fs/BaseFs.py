@@ -9,10 +9,10 @@ from binascii import hexlify as hx
 
 
 class EncryptedSection:
-    def __init__(self, offset, size, cryotoType, cryptoKey, cryptoCounter):
+    def __init__(self, offset, size, cryptoType, cryptoKey, cryptoCounter):
         self.offset = offset
         self.size = size
-        self.cryptoType = cryotoType
+        self.cryptoType = cryptoType
         self.cryptoKey = cryptoKey
         self.cryptoCounter = cryptoCounter
 
@@ -157,7 +157,7 @@ class BaseFs(File):
                     MemoryFile(self.bktr1Buffer), "rb", nca=self
                 )
             except BaseException as e:
-                Print.info("bktr reloc exception: " + str(e))
+                Print.info("bktr reloc exception: {0}".format(str(e)))
 
         if self.bktr2Buffer:
             try:
@@ -165,19 +165,19 @@ class BaseFs(File):
                     MemoryFile(self.bktr2Buffer), "rb", nca=self
                 )
             except BaseException as e:
-                Print.info("bktr subsection exception: " + str(e))
+                Print.info("bktr subsection exception: {0}".format(str(e)))
 
     def bktrRead(self, size=None, direct=False):
         self.cryptoOffset = 0
         self.ctr_val = 0
         """
-		if self.bktrRelocation:
-			entry = self.bktrRelocation.getRelocationEntry(self.tell())
+        if self.bktrRelocation:
+            entry = self.bktrRelocation.getRelocationEntry(self.tell())
 
-			if entry:
-				self.ctr_val = entry.ctr
-				#self.cryptoOffset = entry.virtualOffset + entry.physicalOffset
-		"""
+            if entry:
+                self.ctr_val = entry.ctr
+                #self.cryptoOffset = entry.virtualOffset + entry.physicalOffset
+        """
         if self.bktrSubsection is not None:
             entries = self.bktrSubsection.getEntries(self.tell(), size)
             # Print.info('offset = %x' % self.tell())

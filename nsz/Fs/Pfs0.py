@@ -71,13 +71,13 @@ class Pfs0Stream(BaseFile):
             super(Pfs0Stream, self).close()
 
     # 0xff => 0x1, 0x100 => 0x20, 0x1ff => 0x1, 0x120 => 0x20
-    def allign0x20(self, n):
+    def align0x20(self, n):
         return 0x20 - n % 0x20
 
     def getStringTableSize(self):
         stringTableNonPadded = "\x00".join(file["name"] for file in self.files) + "\x00"
         headerSizeNonPadded = 0x10 + len(self.files) * 0x18 + len(stringTableNonPadded)
-        stringTableSizePadded = len(stringTableNonPadded) + self.allign0x20(
+        stringTableSizePadded = len(stringTableNonPadded) + self.align0x20(
             headerSizeNonPadded
         )
         if self._stringTableSize is None:
@@ -159,13 +159,13 @@ class Pfs0VerifyStream:
         pass
 
     # 0xff => 0x1, 0x100 => 0x20, 0x1ff => 0x1, 0x120 => 0x20
-    def allign0x20(self, n):
+    def align0x20(self, n):
         return 0x20 - n % 0x20
 
     def getStringTableSize(self):
         stringTableNonPadded = "\x00".join(file["name"] for file in self.files) + "\x00"
         headerSizeNonPadded = 0x10 + len(self.files) * 0x18 + len(stringTableNonPadded)
-        stringTableSizePadded = len(stringTableNonPadded) + self.allign0x20(
+        stringTableSizePadded = len(stringTableNonPadded) + self.align0x20(
             headerSizeNonPadded
         )
         if self._stringTableSize is None:
@@ -233,13 +233,13 @@ class Pfs0(BaseFs):
             # self.size -= sectionStart
 
     # 0xff => 0x1, 0x100 => 0x20, 0x1ff => 0x1, 0x120 => 0x20
-    def allign0x20(self, n):
+    def align0x20(self, n):
         return 0x20 - n % 0x20
 
     def getPaddedHeaderSize(self):
         stringTableNonPadded = "\x00".join(file._path for file in self.files) + "\x00"
         headerSizeNonPadded = 0x10 + len(self.files) * 0x18 + len(stringTableNonPadded)
-        return headerSizeNonPadded + self.allign0x20(headerSizeNonPadded)
+        return headerSizeNonPadded + self.align0x20(headerSizeNonPadded)
 
     def getHeaderSize(self):
         return self._headerSize

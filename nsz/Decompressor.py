@@ -75,7 +75,7 @@ def decompress(
                     )
                 else:
                     Print.info(
-                        "Filename startes with {0} but {1} was expected - hash verified failed!".format(
+                        "Filename starts with {0} but {1} was expected - hash verified failed!".format(
                             fileNameHash, hexHash[:32]
                         ),
                         "MISMATCH",
@@ -181,7 +181,7 @@ def __decompressContainer(
                 hashHexdigest = hash.hexdigest()
                 if hasattr(nspf.f, "ticketless"):
                     # This ticket conditional was added to prevent the following exception from occurring when processing a ticketless dump file:
-                    # nut exception: Verification detected hash mismatch
+                    # NUT exception: Verification detected hash mismatch
                     Print.info(
                         "{0}".format(nspf._path),
                         "TICKETLESS",
@@ -236,7 +236,7 @@ def __decompressContainer(
             )
         if hasattr(nspf.f, "ticketless"):
             # This ticket conditional was added to prevent the following exception from occurring when processing a ticketless dump file:
-            # nut exception: Verification detected hash mismatch
+            # NUT exception: Verification detected hash mismatch
             Print.info(
                 "{0}".format(nspf._path), "TICKETLESS", pleaseNoPrint=pleaseNoPrint
             )
@@ -259,9 +259,9 @@ def __decompressContainer(
 
 
 def __getDecompressedNczSize(nspf):
-    UNCOMPRESSABLE_HEADER_SIZE = 0x4000
+    INCOMPRESSIBLE_HEADER_SIZE = 0x4000
     nspf.seek(0)
-    nspf.read(UNCOMPRESSABLE_HEADER_SIZE)
+    nspf.read(INCOMPRESSIBLE_HEADER_SIZE)
     magic = nspf.read(8)
     if not magic == b"NCZSECTN":
         raise ValueError("No NCZSECTN found! Is this really a .ncz file?")
@@ -269,12 +269,12 @@ def __getDecompressedNczSize(nspf):
     sections: list[Header.Section | Header.FakeSection] = [
         Header.Section(nspf) for _ in range(sectionCount)
     ]
-    if sections[0].offset - UNCOMPRESSABLE_HEADER_SIZE > 0:
+    if sections[0].offset - INCOMPRESSIBLE_HEADER_SIZE > 0:
         fakeSection = Header.FakeSection(
-            UNCOMPRESSABLE_HEADER_SIZE, sections[0].offset - UNCOMPRESSABLE_HEADER_SIZE
+            INCOMPRESSIBLE_HEADER_SIZE, sections[0].offset - INCOMPRESSIBLE_HEADER_SIZE
         )
         sections.insert(0, fakeSection)
-    nca_size = UNCOMPRESSABLE_HEADER_SIZE
+    nca_size = INCOMPRESSIBLE_HEADER_SIZE
     for i in range(sectionCount):
         nca_size += sections[i].size
     return nca_size
@@ -290,9 +290,9 @@ def __decompressNcz(
     barState=None,
     outputName=None,
 ):
-    UNCOMPRESSABLE_HEADER_SIZE = 0x4000
+    INCOMPRESSIBLE_HEADER_SIZE = 0x4000
     nspf.seek(0)
-    header = nspf.read(UNCOMPRESSABLE_HEADER_SIZE)
+    header = nspf.read(INCOMPRESSIBLE_HEADER_SIZE)
     if stepLabel is not None:
         currentStep = stepLabel
     else:
@@ -307,12 +307,12 @@ def __decompressNcz(
     sections: list[Header.Section | Header.FakeSection] = [
         Header.Section(nspf) for _ in range(sectionCount)
     ]
-    if sections[0].offset - UNCOMPRESSABLE_HEADER_SIZE > 0:
+    if sections[0].offset - INCOMPRESSIBLE_HEADER_SIZE > 0:
         fakeSection = Header.FakeSection(
-            UNCOMPRESSABLE_HEADER_SIZE, sections[0].offset - UNCOMPRESSABLE_HEADER_SIZE
+            INCOMPRESSIBLE_HEADER_SIZE, sections[0].offset - INCOMPRESSIBLE_HEADER_SIZE
         )
         sections.insert(0, fakeSection)
-    nca_size = UNCOMPRESSABLE_HEADER_SIZE
+    nca_size = INCOMPRESSIBLE_HEADER_SIZE
     for i in range(sectionCount):
         nca_size += sections[i].size
     pos = nspf.tell()
@@ -417,7 +417,7 @@ def __decompressNcz(
         end = s.offset + s.size
         if firstSection:
             firstSection = False
-            uncompressedSize = UNCOMPRESSABLE_HEADER_SIZE - sections[0].offset
+            uncompressedSize = INCOMPRESSIBLE_HEADER_SIZE - sections[0].offset
             if uncompressedSize > 0:
                 i += uncompressedSize
         while i < end:
@@ -627,7 +627,7 @@ def __decompressNsz(
                     if nsp.getHash() == originalHashHex:
                         Print.info("NSP SHA256", "VERIFIED")
                     else:
-                        Print.info("NSP SHA256", "MISSMATCH")
+                        Print.info("NSP SHA256", "MISMATCH")
                         if raisePfs0Exception:
                             raise VerificationException(
                                 "Verification detected NSP SHA256 hash mismatch!"

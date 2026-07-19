@@ -144,7 +144,7 @@ class BaseFile:
             raise IOError("Trying to seek on closed file")
 
         if from_what == 0:
-            # seek from begining
+            # seek from beginning
             self.f.seek(self.offset + offset)
             # if self.cryptoType == Fs.Type.Crypto.CTR:
             # self.crypto.set_ctr(self.setCounter(self.offset + self.tell()))
@@ -434,7 +434,7 @@ class BufferedFile(BaseFile):
         f = self.f
 
         if from_what == 0:
-            # seek from begining
+            # seek from beginning
             self._relativePos = offset
             return
 

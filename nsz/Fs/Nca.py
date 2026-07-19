@@ -318,14 +318,14 @@ class Nca(File):
         Print.info(tabs + "isGameCard = " + hex(self.header.isGameCard))
         Print.info(tabs + "contentType = " + str(self.header.contentType))
         Print.info(tabs + "cryptoType = " + str(self.cryptoType))
-        Print.info(tabs + "Size: " + str(self.header.size))
-        Print.info(tabs + "crypto master key: " + str(self.header.cryptoType))
-        Print.info(tabs + "crypto master key2: " + str(self.header.cryptoType2))
-        Print.info(tabs + "key Index: " + str(self.header.keyIndex))
+        Print.info(tabs + "Size = " + str(self.header.size))
+        Print.info(tabs + "crypto master key = " + str(self.header.cryptoType))
+        Print.info(tabs + "crypto master key2 = " + str(self.header.cryptoType2))
+        Print.info(tabs + "key Index = " + str(self.header.keyIndex))
         # Print.info(tabs + 'key Block: ' + str(self.header.getKeyBlock()))
         for key in self.header.keys:
             if key:
-                Print.info(tabs + "key Block: " + str(hx(key)))
+                Print.info(tabs + "key Block = " + str(hx(key)))
 
         if indent + 1 < maxDepth:
             Print.info("\n%sPartitions:" % (tabs))
@@ -334,4 +334,4 @@ class Nca(File):
                 s.printInfo(maxDepth, indent + 1)
 
         if self.header.contentType == Fs.Type.Content.PROGRAM:
-            Print.info(tabs + "build Id: " + str(self.buildId()))
+            Print.info(tabs + "build Id = " + str(self.buildId()))

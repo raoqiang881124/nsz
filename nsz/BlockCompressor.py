@@ -84,7 +84,7 @@ def blockCompressContainer(
     threads,
 ):
     CHUNK_SZ = 0x100000
-    UNCOMPRESSABLE_HEADER_SIZE = 0x4000
+    INCOMPRESSIBLE_HEADER_SIZE = 0x4000
 
     machineReadableOutput = Print.machineReadableOutput
     minimalOutput = Print.isMinimalOutput()
@@ -134,7 +134,7 @@ def blockCompressContainer(
                 nspf.header.contentType == Type.Content.PROGRAM
                 or nspf.header.contentType == Type.Content.PUBLICDATA
             )
-            and nspf.size > UNCOMPRESSABLE_HEADER_SIZE
+            and nspf.size > INCOMPRESSIBLE_HEADER_SIZE
         ):
             if isNcaPacked(nspf):
                 assert nspf._path is not None
@@ -157,7 +157,7 @@ def blockCompressContainer(
                 f = writeContainer.add(newFileName, nspf.size)
                 startPos = f.tell()
                 nspf.seek(0)
-                f.write(nspf.read(UNCOMPRESSABLE_HEADER_SIZE))
+                f.write(nspf.read(INCOMPRESSIBLE_HEADER_SIZE))
                 sections = []
 
                 for fs in sortedFs(nspf):
@@ -165,7 +165,7 @@ def blockCompressContainer(
 
                 if len(sections) == 0:
                     for p in pool:
-                        # Process.terminate() might corrupt the datastructure but we do't care
+                        # Process.terminate() might corrupt the data structure but we don't care
                         p.terminate()
                     raise Exception("NCA can't be decrypted. Outdated keys.txt?")
                 header = b"NCZSECTN"
@@ -210,7 +210,7 @@ def blockCompressContainer(
                 chunkRelativeBlockID = 0
                 startChunkBlockID = 0
                 blocksHeaderFilePos = f.tell()
-                bytesToCompress = nspf.size - UNCOMPRESSABLE_HEADER_SIZE
+                bytesToCompress = nspf.size - INCOMPRESSIBLE_HEADER_SIZE
                 blocksToCompress = bytesToCompress // blockSize + (
                     bytesToCompress % blockSize > 0
                 )
@@ -226,7 +226,7 @@ def blockCompressContainer(
                 header += bytesToCompress.to_bytes(8, "little")  # Decompressed Size
                 header += b"\x00" * (blocksToCompress * 4)
                 f.write(header)
-                decompressedBytes = UNCOMPRESSABLE_HEADER_SIZE
+                decompressedBytes = INCOMPRESSIBLE_HEADER_SIZE
                 compressedBytes = f.tell()
                 reportProgress(compressedBytes, nspf.size)
 
@@ -256,11 +256,11 @@ def blockCompressContainer(
                     writtenBar.refresh()
 
                 partitions = []
-                if offsetFirstSection - UNCOMPRESSABLE_HEADER_SIZE > 0:
+                if offsetFirstSection - INCOMPRESSIBLE_HEADER_SIZE > 0:
                     partitions.append(
                         nspf.partition(
-                            offset=UNCOMPRESSABLE_HEADER_SIZE,
-                            size=offsetFirstSection - UNCOMPRESSABLE_HEADER_SIZE,
+                            offset=INCOMPRESSIBLE_HEADER_SIZE,
+                            size=offsetFirstSection - INCOMPRESSIBLE_HEADER_SIZE,
                             cryptoType=Type.Crypto.CTR.NONE,
                             autoOpen=True,
                         )
@@ -277,8 +277,8 @@ def blockCompressContainer(
                             autoOpen=True,
                         )
                     )
-                if UNCOMPRESSABLE_HEADER_SIZE - offsetFirstSection > 0:
-                    partitions[0].seek(UNCOMPRESSABLE_HEADER_SIZE - offsetFirstSection)
+                if INCOMPRESSIBLE_HEADER_SIZE - offsetFirstSection > 0:
+                    partitions[0].seek(INCOMPRESSIBLE_HEADER_SIZE - offsetFirstSection)
 
                 partNr = 0
                 decompressedBytesOld = nspf.tell() // 1048576
@@ -382,7 +382,7 @@ def blockCompressContainer(
             buffer = nspf.read(CHUNK_SZ)
             f.write(buffer)
 
-    # Ensures that all threads are started and compleaded before being requested to quit
+    # Ensures that all threads are started and completed before being requested to quit
     while readyForWork.value() < threads:
         sleep(0.02)
     pleaseKillYourself.increment()
@@ -449,7 +449,7 @@ def blockCompressNsp(
     return nszPath
 
 
-def allign0x200(n):
+def align0x200(n):
     return 0x200 - n % 0x200
 
 
@@ -491,7 +491,7 @@ def blockCompressXci(
                             blockSizeExponent,
                             threads,
                         )
-                    alignedSize = partitionOut.actualSize + allign0x200(
+                    alignedSize = partitionOut.actualSize + align0x200(
                         partitionOut.actualSize
                     )
                     xci.hfs0.resize(partitionIn._path, alignedSize)

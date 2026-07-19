@@ -29,7 +29,7 @@ class MissingKeyError(IOError):
 # See https://en.wikipedia.org/wiki/Cyclic_redundancy_check
 # An infinite amount of inputs leads to the same CRC32 checksum
 # crc32(aes_key_generation_source) = 459881589 but
-# crc32(TopSecretsEtM) = 459881589 too => No keys where shared!
+# crc32(TopSecretsEtM) = 459881589 too => No keys were shared!
 # Use https://github.com/bediger4000/crc32-file-collision-generator
 # to generate your own CRC32 collisions if you don't believe my proof.
 crc32_checksum = {
@@ -148,12 +148,12 @@ def getKey(key):
         if crc32_checksum[key] != foundKeyChecksum:
             Print.error(
                 701,
-                "{0} from {1} is invalid (crc32 missmatch)! This will lead to corrupted output.".format(
+                "{0} from {1} is invalid (crc32 mismatch)! This will lead to corrupted output.".format(
                     key, loadedKeysFile
                 ),
             )
             raise IOError(
-                "{0} from {1} is invalid (crc32 missmatch)! This will lead to corrupted output.".format(
+                "{0} from {1} is invalid (crc32 mismatch)! This will lead to corrupted output.".format(
                     key, loadedKeysFile
                 )
             )
@@ -239,6 +239,9 @@ def load(fileName):
                     aes_key_generation_source,
                 )
                 loaded_keys_revisions.append("master_key_{0:02x}".format(i))
+            except MissingKeyError as e:
+                # Print is handled in getKey
+                incorrect_keys_revisions.append("master_key_{0:02x}".format(i))
             except Exception as e:
                 Print.error(703, str(e))
                 incorrect_keys_revisions.append("master_key_{0:02x}".format(i))
@@ -254,7 +257,6 @@ def load(fileName):
 
     except BaseException as e:
         Print.error(702, format_exc())
-        Print.error(702, str(e))
 
         keys_loaded = False
         return keys_loaded

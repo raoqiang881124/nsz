@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 # This is needed as multiprocessing shouldn't include nsz
-# as it won't be able to optain __main__.__file__ and so crash inside Keys.py
+# as it won't be able to obtain __main__.__file__ and so crash inside Keys.py
 if __name__ == "__main__":
     import sys
     import pathlib
+    from traceback import print_exc
 
     if sys.hexversion < 0x03060000:
         raise ImportError(
@@ -24,5 +25,5 @@ if __name__ == "__main__":
     try:
         nsz.main()
     except Exception as e:
-        print(f"Error: {e}")
+        print_exc()
         sys.exit(1)

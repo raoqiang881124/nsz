@@ -1,10 +1,11 @@
 {
-  "name": "nsz-binary-build",
+  "name": "nsz-binary-build_docker",
   "build": {
-    "dockerfile": "Dockerfile",
-    "context": ".."
+    "dockerfile": "../Dockerfile",
+    "context": "../.."
   },
   "workspaceFolder": "/workspaces/nsz",
+  "workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
   "remoteUser": "vscode",
   "remoteEnv": {
     "PATH": "/opt/venv-linux/bin:${containerEnv:PATH}"
@@ -13,7 +14,8 @@
     "vscode": {
       "extensions": [
         "charliermarsh.ruff",
-        "ms-python.python"
+        "ms-python.python",
+        "streetsidesoftware.code-spell-checker"
       ]
     }
   }
