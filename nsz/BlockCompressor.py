@@ -15,8 +15,6 @@ else:
 
 
 def compressBlockTask(in_queue, out_list, readyForWork, pleaseKillYourself, blockSize):
-    if not Keys.keys_loaded:
-        Keys.load_default()
     while True:
         readyForWork.increment()
         item = in_queue.get()
