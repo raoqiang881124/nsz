@@ -49,6 +49,8 @@ def blockCompress(
     blockSizeExponent,
     outputDir,
     threads,
+    statusReport=None,
+    id=0,
 ):
     if filePath.suffix == ".nsp":
         return blockCompressNsp(
@@ -60,6 +62,8 @@ def blockCompress(
             blockSizeExponent,
             outputDir,
             threads,
+            statusReport,
+            id,
         )
     elif filePath.suffix == ".xci":
         return blockCompressXci(
@@ -71,6 +75,8 @@ def blockCompress(
             blockSizeExponent,
             outputDir,
             threads,
+            statusReport,
+            id,
         )
 
 
@@ -82,12 +88,16 @@ def blockCompressContainer(
     useLongDistanceMode,
     blockSizeExponent,
     threads,
+    statusReport=None,
+    id=0,
 ):
     CHUNK_SZ = 0x100000
     INCOMPRESSIBLE_HEADER_SIZE = 0x4000
 
     machineReadableOutput = Print.machineReadableOutput
     minimalOutput = Print.isMinimalOutput()
+    # When the caller polls a statusReport dict, skip the enlighten bars entirely
+    useBars = statusReport is None and not machineReadableOutput and not minimalOutput
 
     if blockSizeExponent < 14 or blockSizeExponent > 32:
         raise ValueError("Block size must be between 14 and 32")
@@ -117,7 +127,7 @@ def blockCompressContainer(
     WRITTEN_FMT = "{desc}{desc_pad}{count:.2j}B [{elapsed}, {rate:.2j}B/s]"
     WRITTEN_DESC = "Compressing Written"
     READ_DESC = "Compressing Read".ljust(len(WRITTEN_DESC))
-    if not machineReadableOutput and not minimalOutput:
+    if useBars:
         barManager = enlighten.get_manager()
 
     for nspf in readContainer:
@@ -228,9 +238,11 @@ def blockCompressContainer(
                 f.write(header)
                 decompressedBytes = INCOMPRESSIBLE_HEADER_SIZE
                 compressedBytes = f.tell()
+                if statusReport is not None:
+                    statusReport[id] = [decompressedBytes, compressedBytes, nspf.size, "Compressing"]
                 reportProgress(compressedBytes, nspf.size)
 
-                if not machineReadableOutput and not minimalOutput:
+                if useBars:
                     assert barManager is not None
                     if bar is None:
                         bar = barManager.counter(
@@ -283,7 +295,7 @@ def blockCompressContainer(
                 partNr = 0
                 decompressedBytesOld = nspf.tell() // 1048576
 
-                if not machineReadableOutput and not minimalOutput:
+                if useBars:
                     assert bar is not None and writtenBar is not None
                     bar.count = nspf.tell() // 1048576
                     writtenBar.count = float(f.tell())
@@ -331,7 +343,9 @@ def blockCompressContainer(
                     ):  # Refresh every 10 MB
                         decompressedBytesOld = decompressedBytes
 
-                        if not machineReadableOutput and not minimalOutput:
+                        if statusReport is not None:
+                            statusReport[id] = [decompressedBytes, compressedBytes, nspf.size, "Compressing"]
+                        if useBars:
                             assert bar is not None and writtenBar is not None
                             bar.count = decompressedBytes // 1048576
                             writtenBar.count = float(compressedBytes)
@@ -346,7 +360,9 @@ def blockCompressContainer(
                 endPos = f.tell()
                 written = endPos - startPos
 
-                if not machineReadableOutput and not minimalOutput:
+                if statusReport is not None:
+                    statusReport[id] = [decompressedBytes, written, nspf.size, "Compressing"]
+                if useBars:
                     assert bar is not None and writtenBar is not None
                     bar.count = bar.total
                     writtenBar.count = float(written)
@@ -407,6 +423,8 @@ def blockCompressNsp(
     blockSizeExponent,
     outputDir,
     threads,
+    statusReport=None,
+    id=0,
 ):
     filePath = filePath.resolve()
     container = Nsp.Nsp()
@@ -433,6 +451,8 @@ def blockCompressNsp(
                 useLongDistanceMode,
                 blockSizeExponent,
                 threads,
+                statusReport,
+                id,
             )
 
         Print.progress("Complete", {"filePath": str(nszPath)})
@@ -462,6 +482,8 @@ def blockCompressXci(
     blockSizeExponent,
     outputDir,
     threads,
+    statusReport=None,
+    id=0,
 ):
     filePath = filePath.resolve()
     container = Xci.Xci()
@@ -490,6 +512,8 @@ def blockCompressXci(
                             useLongDistanceMode,
                             blockSizeExponent,
                             threads,
+                            statusReport,
+                            id,
                         )
                     alignedSize = partitionOut.actualSize + align0x200(
                         partitionOut.actualSize
