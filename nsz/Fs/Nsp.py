@@ -465,14 +465,20 @@ class Nsp(Pfs0):
             Print.info("\t\tRepack %s is already complete!" % self.path)
             return
 
-        t = enlighten.Counter(
-            total=totalSize, unit="B", desc=os.path.basename(self.path), leave=False
+        useBar = not Print.isMinimalOutput() and not Print.machineReadableOutput
+        t = (
+            enlighten.Counter(
+                total=totalSize, unit="B", desc=os.path.basename(self.path), leave=False
+            )
+            if useBar
+            else None
         )
 
         Print.info("\t\tWriting header...")
         outf = open(self.path, "wb")
         outf.write(hd)
-        t.update(len(hd))
+        if t is not None:
+            t.update(len(hd))
 
         for f_str in files:
             for filePath in expandFiles(Path(f_str)):
@@ -483,8 +489,10 @@ class Nsp(Pfs0):
                         if not buf:
                             break
                         outf.write(buf)
-                        t.update(len(buf))
-        t.close()
+                        if t is not None:
+                            t.update(len(buf))
+        if t is not None:
+            t.close()
 
         Print.info("\t\tRepacked to %s!" % outf.name)
         outf.close()
