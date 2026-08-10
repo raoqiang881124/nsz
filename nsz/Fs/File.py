@@ -63,7 +63,7 @@ class BaseFile:
 
         n.offset = offset
 
-        if not size:
+        if size is None:
             size = self.size - n.offset - self.offset
 
         n.size = size
